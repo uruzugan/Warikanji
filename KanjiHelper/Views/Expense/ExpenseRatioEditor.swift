@@ -10,7 +10,6 @@ struct ExpenseRatioEditor: View {
     @Binding var fixedIds: Set<UUID>
 
     @State private var weightTexts: [UUID: String] = [:]
-    @FocusState private var focusedId: UUID?
 
     private let tolerance = 0.000001
     private var language: AppLanguage { profileStore.activeLanguage }
@@ -158,7 +157,6 @@ struct ExpenseRatioEditor: View {
                 TextField("1.0", text: weightBinding(id))
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .focused($focusedId, equals: id)
                     .font(.headline.monospacedDigit())
                     .frame(width: 90)
                     .inputStyle()

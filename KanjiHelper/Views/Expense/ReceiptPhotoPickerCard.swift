@@ -8,35 +8,45 @@ struct ReceiptPhotoPickerCard: View {
 
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var previewIndex: Int?
+    @State private var showCamera = false
+    @State private var showCameraUnavailable = false
 
     private var language: AppLanguage { profileStore.activeLanguage }
     private var remainingCount: Int { max(0, 3 - imageData.count) }
 
     private var title: String {
         language.text(
-            ja: "レシート写真", en: "Receipt Photos",
-            zhHans: "收据照片", zhHant: "收據照片",
-            ko: "영수증 사진", es: "Fotos del recibo", pt: "Fotos do recibo"
+            ja: "写真", en: "Photos",
+            zhHans: "照片", zhHant: "照片",
+            ko: "사진", es: "Fotos", pt: "Fotos"
         )
     }
 
-    private var addText: String {
+    private var libraryText: String {
         language.text(
-            ja: "写真を追加", en: "Add Photo",
-            zhHans: "添加照片", zhHant: "新增照片",
-            ko: "사진 추가", es: "Añadir foto", pt: "Adicionar foto"
+            ja: "写真を選ぶ", en: "Choose Photos",
+            zhHans: "选择照片", zhHant: "選擇照片",
+            ko: "사진 선택", es: "Elegir fotos", pt: "Escolher fotos"
+        )
+    }
+
+    private var cameraText: String {
+        language.text(
+            ja: "カメラで撮る", en: "Take Photo",
+            zhHans: "拍摄照片", zhHant: "拍攝照片",
+            ko: "사진 촬영", es: "Tomar foto", pt: "Tirar foto"
         )
     }
 
     private var helpText: String {
         language.text(
-            ja: "最大3枚まで保存できます。写真をタップすると拡大できます。",
-            en: "Save up to 3 photos. Tap a photo to enlarge it.",
-            zhHans: "最多可保存3张照片。点击照片可放大查看。",
-            zhHant: "最多可儲存3張照片。點擊照片可放大查看。",
-            ko: "최대 3장까지 저장할 수 있습니다. 사진을 탭하면 확대할 수 있습니다.",
-            es: "Puedes guardar hasta 3 fotos. Toca una foto para ampliarla.",
-            pt: "Você pode salvar até 3 fotos. Toque em uma foto para ampliá-la."
+            ja: "レシートなどの写真を最大3枚まで保存できます。写真をタップすると拡大できます。",
+            en: "Save up to 3 photos, such as receipts. Tap a photo to enlarge it.",
+            zhHans: "最多可保存3张收据等照片。点击照片可放大查看。",
+            zhHant: "最多可儲存3張收據等照片。點擊照片可放大查看。",
+            ko: "영수증 등의 사진을 최대 3장까지 저장할 수 있습니다. 사진을 탭하면 확대됩니다.",
+            es: "Puedes guardar hasta 3 fotos, como recibos. Toca una foto para ampliarla.",
+            pt: "Você pode salvar até 3 fotos, como recibos. Toque em uma foto para ampliá-la."
         )
     }
 
@@ -57,19 +67,35 @@ struct ReceiptPhotoPickerCard: View {
             }
 
             if remainingCount > 0 {
-                PhotosPicker(
-                    selection: $pickerItems,
-                    maxSelectionCount: remainingCount,
-                    matching: .images
-                ) {
-                    Label(addText, systemImage: "photo.badge.plus")
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(AppTheme.primary.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                HStack(spacing: 10) {
+                    PhotosPicker(
+                        selection: $pickerItems,
+                        maxSelectionCount: remainingCount,
+                        matching: .images
+                    ) {
+                        Label(libraryText, systemImage: "photo.on.rectangle")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                            .background(AppTheme.primary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded { dismissKeyboard() })
+
+                    Button {
+                        dismissKeyboard()
+                        DispatchQueue.main.async { openCamera() }
+                    } label: {
+                        Label(cameraText, systemImage: "camera.fill")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 11)
+                            .background(AppTheme.primary.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             Text(helpText)
@@ -80,8 +106,31 @@ struct ReceiptPhotoPickerCard: View {
         .onChange(of: pickerItems) { _, items in
             load(items)
         }
-        .sheet(isPresented: previewBinding) {
-            receiptPreview
+        .sheet(isPresented: previewBinding) { photoPreview }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraImagePicker { image in addCameraImage(image) }
+                .ignoresSafeArea()
+        }
+        .alert(
+            language.text(
+                ja: "カメラを使用できません", en: "Camera Unavailable",
+                zhHans: "无法使用相机", zhHant: "無法使用相機",
+                ko: "카메라를 사용할 수 없습니다",
+                es: "Cámara no disponible", pt: "Câmera indisponível"
+            ),
+            isPresented: $showCameraUnavailable
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(language.text(
+                ja: "Simulatorではカメラを使用できません。実機のiPhoneで確認してください。",
+                en: "The camera is unavailable in Simulator. Test this feature on a real iPhone.",
+                zhHans: "Simulator无法使用相机。请在真实的iPhone上进行测试。",
+                zhHant: "Simulator無法使用相機。請在實際的iPhone上測試。",
+                ko: "Simulator에서는 카메라를 사용할 수 없습니다. 실제 iPhone에서 테스트하세요.",
+                es: "La cámara no está disponible en Simulator. Pruébala en un iPhone real.",
+                pt: "A câmera não está disponível no Simulator. Teste em um iPhone real."
+            ))
         }
     }
 
@@ -90,7 +139,8 @@ struct ReceiptPhotoPickerCard: View {
         if let image = UIImage(data: data) {
             ZStack(alignment: .topTrailing) {
                 Button {
-                    previewIndex = index
+                    dismissKeyboard()
+                    DispatchQueue.main.async { previewIndex = index }
                 } label: {
                     Image(uiImage: image)
                         .resizable()
@@ -101,8 +151,17 @@ struct ReceiptPhotoPickerCard: View {
                 .buttonStyle(.plain)
 
                 Button {
+                    dismissKeyboard()
+                    guard imageData.indices.contains(index) else { return }
                     imageData.remove(at: index)
-                    if previewIndex == index { previewIndex = nil }
+
+                    if let previewIndex {
+                        if previewIndex == index {
+                            self.previewIndex = nil
+                        } else if previewIndex > index {
+                            self.previewIndex = previewIndex - 1
+                        }
+                    }
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
@@ -122,7 +181,7 @@ struct ReceiptPhotoPickerCard: View {
     }
 
     @ViewBuilder
-    private var receiptPreview: some View {
+    private var photoPreview: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
@@ -151,6 +210,22 @@ struct ReceiptPhotoPickerCard: View {
         }
     }
 
+    private func openCamera() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            showCameraUnavailable = true
+            return
+        }
+
+        showCamera = true
+    }
+
+    private func addCameraImage(_ image: UIImage) {
+        guard imageData.count < 3,
+              let data = image.jpegData(compressionQuality: 0.9) else { return }
+
+        imageData.append(data)
+    }
+
     private func load(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
 
@@ -169,5 +244,14 @@ struct ReceiptPhotoPickerCard: View {
                 pickerItems = []
             }
         }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }

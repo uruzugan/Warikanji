@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ExpenseEditView: View {
     @EnvironmentObject private var viewModel: EventViewModel
@@ -132,7 +133,8 @@ struct ExpenseEditView: View {
                         participants: participants,
                         payerId: $payerId
                     ) {
-                        showRoulette = true
+                        dismissKeyboard()
+                        DispatchQueue.main.async { showRoulette = true }
                     }
 
                     SettlementRoundingPicker(rounding: $rounding, currency: currency)
@@ -146,13 +148,22 @@ struct ExpenseEditView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppTheme.background)
             .navigationTitle(copy.title)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { loadIfNeeded() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(language.t(.cancel)) { dismiss() }
+                    Button(language.t(.cancel)) {
+                        dismissKeyboard()
+                        dismiss()
+                    }
+                }
+
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(language.t(.done)) { dismissKeyboard() }
                 }
             }
             .sheet(isPresented: $showRoulette) {
@@ -169,6 +180,7 @@ struct ExpenseEditView: View {
                 titleVisibility: .visible
             ) {
                 Button(copy.delete, role: .destructive) {
+                    dismissKeyboard()
                     let files = latestExpense?.receiptImages ?? expense.receiptImages
                     ReceiptImageStorage.shared.delete(files)
                     viewModel.deleteExpense(expenseId: expense.id, from: eventId)
@@ -218,6 +230,7 @@ struct ExpenseEditView: View {
 
     private var deleteButton: some View {
         Button {
+            dismissKeyboard()
             showDeleteConfirmation = true
         } label: {
             Label(copy.deleteExpense, systemImage: "trash")
@@ -266,6 +279,7 @@ struct ExpenseEditView: View {
     private func save() {
         guard let payerId,
               var updated = viewModel.expense(for: expense.id, in: eventId) else { return }
+        dismissKeyboard()
 
         let oldFiles = updated.receiptImages
         var newFiles: [String] = []
@@ -289,5 +303,14 @@ struct ExpenseEditView: View {
         viewModel.updateExpense(updated, in: eventId)
         ReceiptImageStorage.shared.delete(oldFiles)
         dismiss()
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }

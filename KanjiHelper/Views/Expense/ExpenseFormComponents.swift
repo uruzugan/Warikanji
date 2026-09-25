@@ -52,8 +52,6 @@ struct ExpenseInfoCard: View {
 
     let currency: AppCurrency
 
-    @FocusState private var isFocused: Bool
-
     private var language: AppLanguage { profileStore.activeLanguage }
     private var amount: Int? { currency.minorUnits(from: amountText) }
 
@@ -63,7 +61,6 @@ struct ExpenseInfoCard: View {
                 .font(.headline)
 
             TextField(language.expenseFormText(.expenseName), text: $title)
-                .focused($isFocused)
                 .inputStyle()
 
             HStack(spacing: 10) {
@@ -75,7 +72,6 @@ struct ExpenseInfoCard: View {
                     .keyboardType(currency.fractionDigits == 0 ? .numberPad : .decimalPad)
                     .font(.title2.bold())
                     .multilineTextAlignment(.trailing)
-                    .focused($isFocused)
             }
             .inputStyle()
 
@@ -108,12 +104,6 @@ struct ExpenseInfoCard: View {
             }
         }
         .appCard()
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button(language.t(.done)) { isFocused = false }
-            }
-        }
     }
 }
 

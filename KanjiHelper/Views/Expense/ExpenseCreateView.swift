@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ExpenseCreateView: View {
     @EnvironmentObject private var viewModel: EventViewModel
@@ -96,13 +97,18 @@ struct ExpenseCreateView: View {
                         payerId: $payerId,
                         names: names
                     ) {
-                        showRoulette = true
+                        dismissKeyboard()
+                        DispatchQueue.main.async { showRoulette = true }
                     }
 
                     ExpenseSplitMethodCard(
                         eventType: event?.eventType,
                         splitMethod: $splitMethod
                     )
+
+                    if event?.expenses.last != nil {
+                        previousSettingsCard
+                    }
 
                     if splitMethod == .custom {
                         ExpenseRatioEditor(
@@ -123,6 +129,7 @@ struct ExpenseCreateView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppTheme.background)
             .navigationTitle(screenTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -137,7 +144,15 @@ struct ExpenseCreateView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(language.t(.cancel)) { dismiss() }
+                    Button(language.t(.cancel)) {
+                        dismissKeyboard()
+                        dismiss()
+                    }
+                }
+
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(language.t(.done)) { dismissKeyboard() }
                 }
             }
         }
@@ -160,6 +175,55 @@ struct ExpenseCreateView: View {
         .padding(.bottom, 10)
     }
 
+    private var previousSettingsCard: some View {
+        Button(action: applyPreviousSplitSettings) {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .font(.title3.bold())
+                    .foregroundStyle(AppTheme.primary)
+                    .frame(width: 42, height: 42)
+                    .background(AppTheme.primary.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(previousSettingsTitle)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.primary)
+
+                    Text(previousSettingsDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+            }
+            .appCard()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var previousSettingsTitle: String {
+        language.text(
+            ja: "前回の負担設定を引き継ぐ", en: "Use Previous Split Settings",
+            zhHans: "沿用上次的分摊设置", zhHant: "沿用上次的分攤設定",
+            ko: "이전 부담 설정 사용", es: "Usar el reparto anterior",
+            pt: "Usar a divisão anterior"
+        )
+    }
+
+    private var previousSettingsDescription: String {
+        language.text(
+            ja: "負担方法・対象者・比率・集金単位を引き継ぎます。新しい費用には自動で適用されます。",
+            en: "Copies the split method, participants, ratios, and collection unit. New expenses inherit them automatically.",
+            zhHans: "沿用分摊方式、参与者、比例和收款单位。新费用会自动应用。",
+            zhHant: "沿用分攤方式、參與者、比例和收款單位。新費用會自動套用。",
+            ko: "부담 방식, 대상자, 비율 및 정산 단위를 이어받습니다. 새 비용에는 자동 적용됩니다.",
+            es: "Copia el método, participantes, proporciones y unidad de cobro. Se aplica automáticamente a los gastos nuevos.",
+            pt: "Copia o método, participantes, proporções e unidade de cobrança. É aplicado automaticamente às novas despesas."
+        )
+    }
+
     private func prepareIfNeeded() {
         guard !hasPrepared else { return }
 
@@ -175,11 +239,36 @@ struct ExpenseCreateView: View {
             expenseDate = event.date
         }
 
+        applyPreviousSplitSettings()
+
         hasPrepared = true
+    }
+
+    private func applyPreviousSplitSettings() {
+        guard let previous = event?.expenses.last else { return }
+
+        splitMethod = previous.splitMethod
+        rounding = previous.rounding
+        conditions = participants.map { participant in
+            guard let saved = previous.conditions.first(where: {
+                $0.participantId == participant.id
+            }) else {
+                return ExpenseCondition(expenseId: expenseId, participantId: participant.id)
+            }
+
+            return ExpenseCondition(
+                expenseId: expenseId,
+                participantId: participant.id,
+                isIncluded: saved.isIncluded,
+                customWeight: saved.customWeight
+            )
+        }
+        fixedIds = []
     }
 
     private func save() {
         guard let payerId else { return }
+        dismissKeyboard()
 
         saveNames()
 
@@ -215,6 +304,15 @@ struct ExpenseCreateView: View {
             updated.name = name
             viewModel.updateParticipant(updated, in: eventId)
         }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 
