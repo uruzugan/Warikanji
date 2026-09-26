@@ -29,6 +29,11 @@ struct CalculationWarning: Identifiable, Equatable {
     var type: CalculationWarningType
 
     func message(for language: AppLanguage) -> String {
+        func expenseTitle(_ rawTitle: String) -> String {
+            let trimmed = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? Expense.untitledName(for: language) : trimmed
+        }
+
         switch type {
         case .noParticipants:
             return language.text(
@@ -44,7 +49,8 @@ struct CalculationWarning: Identifiable, Equatable {
                 ko: "등록된 비용이 없습니다.", es: "No se han añadido gastos.", pt: "Nenhuma despesa foi adicionada."
             )
 
-        case .payerNotSet(let title):
+        case .payerNotSet(let rawTitle):
+            let title = expenseTitle(rawTitle)
             return language.text(
                 ja: "「\(title)」の支払者が未設定です",
                 en: "The payer for “\(title)” is not set.",
@@ -55,7 +61,8 @@ struct CalculationWarning: Identifiable, Equatable {
                 pt: "O pagador de “\(title)” não foi definido."
             )
 
-        case .noParticipantsToShare(let title):
+        case .noParticipantsToShare(let rawTitle):
+            let title = expenseTitle(rawTitle)
             return language.text(
                 ja: "「\(title)」に負担対象者がいません",
                 en: "“\(title)” has no participants included in the split.",
@@ -66,7 +73,8 @@ struct CalculationWarning: Identifiable, Equatable {
                 pt: "“\(title)” não possui participantes incluídos na divisão."
             )
 
-        case .ratioNotSet(let title):
+        case .ratioNotSet(let rawTitle):
+            let title = expenseTitle(rawTitle)
             return language.text(
                 ja: "「\(title)」の負担比率を設定してください",
                 en: "Set the share ratios for “\(title)”.",

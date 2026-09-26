@@ -7,7 +7,6 @@ struct ExpenseFormHero: View {
     let amount: Int
     let category: ExpenseCategory
     let currency: AppCurrency
-    let isEditing: Bool
 
     private var language: AppLanguage { profileStore.activeLanguage }
 
@@ -39,7 +38,7 @@ struct ExpenseFormHero: View {
 
     private var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? language.expenseFormText(isEditing ? .editExpense : .addExpense) : trimmed
+        return trimmed.isEmpty ? Expense.untitledName(for: language) : trimmed
     }
 }
 
@@ -60,7 +59,7 @@ struct ExpenseInfoCard: View {
             Label(language.expenseFormText(.expenseInfo), systemImage: "banknote.fill")
                 .font(.headline)
 
-            TextField(language.expenseFormText(.expenseName), text: $title)
+            TextField(language.expenseFormText(.expenseNameOptional), text: $title)
                 .inputStyle()
 
             HStack(spacing: 10) {
@@ -243,17 +242,15 @@ struct SettlementRoundingPicker: View {
 }
 
 fileprivate enum ExpenseFormText: Int {
-    case enterAmount, editExpense, addExpense, expenseInfo, expenseName, enteredAmount
+    case enterAmount, expenseInfo, expenseNameOptional, enteredAmount
     case integerWarning, decimalWarning, category, payer, choose, roulette
     case splitMethod, equalDescription, customDescription, collectionUnit
 }
 
 private let expenseFormTexts: [[String]] = [
     ["金額を入力", "Enter amount", "输入金额", "輸入金額", "금액 입력", "Introduce el importe", "Digite o valor"],
-    ["費用を編集", "Edit Expense", "编辑费用", "編輯費用", "비용 편집", "Editar gasto", "Editar despesa"],
-    ["費用を追加", "Add Expense", "添加费用", "新增費用", "비용 추가", "Añadir gasto", "Adicionar despesa"],
     ["費用情報", "Expense Information", "费用信息", "費用資訊", "비용 정보", "Información del gasto", "Informações da despesa"],
-    ["費用名", "Expense Name", "费用名称", "費用名稱", "비용 이름", "Nombre del gasto", "Nome da despesa"],
+    ["費用名（任意）", "Expense Name (Optional)", "费用名称（可选）", "費用名稱（選填）", "비용 이름 (선택)", "Nombre del gasto (opcional)", "Nome da despesa (opcional)"],
     ["入力金額", "Entered Amount", "输入金额", "輸入金額", "입력 금액", "Importe introducido", "Valor informado"],
     ["1以上の整数で入力してください", "Enter a whole number of 1 or more.", "请输入1以上的整数。", "請輸入1以上的整數。", "1 이상의 정수를 입력하세요.", "Introduce un número entero de 1 o más.", "Digite um número inteiro igual ou maior que 1."],
     ["0より大きい金額を小数第2位まで入力してください", "Enter an amount greater than 0 with up to 2 decimal places.", "请输入大于0且最多两位小数的金额。", "請輸入大於0且最多兩位小數的金額。", "0보다 큰 금액을 소수 둘째 자리까지 입력하세요.", "Introduce un importe mayor que 0 con hasta 2 decimales.", "Digite um valor maior que 0 com até 2 casas decimais."],

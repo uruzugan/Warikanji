@@ -303,7 +303,7 @@ private struct ExpenseListCard: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Text(expense.title)
+                    Text(expense.displayTitle(for: language))
                         .font(.headline)
                         .foregroundStyle(.primary)
 

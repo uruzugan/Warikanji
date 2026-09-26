@@ -43,7 +43,7 @@ struct EventEditView: View {
 
     private var outsideExpensePreview: String {
         let expenses = expensesOutsideSelectedPeriod
-        let names = expenses.prefix(3).map(\.title).joined(separator: "、")
+        let names = expenses.prefix(3).map { $0.displayTitle(for: language) }.joined(separator: "、")
         let remaining = expenses.count - min(expenses.count, 3)
         return remaining > 0 ? "\(names) ＋\(remaining)" : names
     }

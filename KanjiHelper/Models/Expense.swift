@@ -119,6 +119,19 @@ struct Expense: Identifiable, Codable, Equatable {
 
     var receiptImages: [String] { receiptImageFileNames ?? [] }
 
+    static func untitledName(for language: AppLanguage) -> String {
+        language.text(
+            ja: "費用名未設定", en: "Untitled Expense",
+            zhHans: "未命名费用", zhHant: "未命名費用",
+            ko: "이름 없는 비용", es: "Gasto sin nombre", pt: "Despesa sem nome"
+        )
+    }
+
+    func displayTitle(for language: AppLanguage) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? Self.untitledName(for: language) : trimmedTitle
+    }
+
     init(
         id: UUID = UUID(),
         title: String,

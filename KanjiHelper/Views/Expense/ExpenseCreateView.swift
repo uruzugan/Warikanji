@@ -35,7 +35,6 @@ struct ExpenseCreateView: View {
     }
 
     private var isSaveDisabled: Bool {
-        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         amount <= 0 ||
         payerId == nil ||
         (splitMethod == .custom && customTotalWeight <= 0)
@@ -70,12 +69,18 @@ struct ExpenseCreateView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
+                    ReceiptScannerCard(
+                        imageData: $receiptImageData,
+                        currency: currency,
+                        onApply: applyOCR
+                    )
+                    .environmentObject(profileStore)
+
                     ExpenseFormHero(
                         title: title,
                         amount: amount,
                         category: category,
-                        currency: currency,
-                        isEditing: false
+                        currency: currency
                     )
 
                     ExpenseInfoCard(
@@ -122,11 +127,7 @@ struct ExpenseCreateView: View {
 
                     SettlementRoundingPicker(rounding: $rounding, currency: currency)
 
-                    ReceiptPhotoPickerCard(
-                        imageData: $receiptImageData,
-                        currency: currency,
-                        onApplyOCR: applyOCR
-                    )
+                    ReceiptPhotoPickerCard(imageData: $receiptImageData)
                         .environmentObject(profileStore)
 
                     saveButton

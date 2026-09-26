@@ -91,7 +91,7 @@ extension Event {
             lines.append("【\(groupTitle)・\(subtotal)】")
 
             for expense in group.expenses {
-                lines.append("・\(expense.title)：\(currency.formatted(minorUnits: expense.amount))")
+                lines.append("・\(expense.displayTitle(for: language))：\(currency.formatted(minorUnits: expense.amount))")
             }
         }
 
@@ -109,7 +109,7 @@ extension Event {
             lines.append("【\(noDateTitle)】")
 
             for expense in undatedExpenses {
-                lines.append("・\(expense.title)：\(currency.formatted(minorUnits: expense.amount))")
+                lines.append("・\(expense.displayTitle(for: language))：\(currency.formatted(minorUnits: expense.amount))")
             }
         }
 

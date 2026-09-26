@@ -126,7 +126,7 @@ struct SettlementShareCardView: View {
 
     private func expenseRow(_ expense: Expense) -> some View {
         HStack {
-            Text("• \(expense.title)").lineLimit(1)
+            Text("• \(expense.displayTitle(for: language))").lineLimit(1)
             Spacer()
             Text(event.currency.formatted(minorUnits: expense.amount))
         }

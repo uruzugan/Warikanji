@@ -5,71 +5,26 @@ import UIKit
 struct ReceiptPhotoPickerCard: View {
     @EnvironmentObject private var profileStore: ProfileStore
     @Binding var imageData: [Data]
-    let currency: AppCurrency
-    let onApplyOCR: (ReceiptOCRResult) -> Void
 
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var previewIndex: Int?
     @State private var showCamera = false
     @State private var showCameraUnavailable = false
-    @State private var showOCRPhotoSelection = false
-    @State private var isScanning = false
-    @State private var scanResult: ReceiptOCRResult?
-    @State private var scanErrorMessage: String?
 
     private var language: AppLanguage { profileStore.activeLanguage }
     private var remainingCount: Int { max(0, 3 - imageData.count) }
 
-    private var title: String {
-        language.text(
-            ja: "写真", en: "Photos",
-            zhHans: "照片", zhHant: "照片",
-            ko: "사진", es: "Fotos", pt: "Fotos"
-        )
-    }
-
-    private var libraryText: String {
-        language.text(
-            ja: "写真を選ぶ", en: "Choose Photos",
-            zhHans: "选择照片", zhHant: "選擇照片",
-            ko: "사진 선택", es: "Elegir fotos", pt: "Escolher fotos"
-        )
-    }
-
-    private var cameraText: String {
-        language.text(
-            ja: "カメラで撮る", en: "Take Photo",
-            zhHans: "拍摄照片", zhHant: "拍攝照片",
-            ko: "사진 촬영", es: "Tomar foto", pt: "Tirar foto"
-        )
-    }
-
-    private var helpText: String {
-        language.text(
-            ja: "レシートなどの写真を最大3枚まで保存できます。写真をタップすると拡大できます。",
-            en: "Save up to 3 photos, such as receipts. Tap a photo to enlarge it.",
-            zhHans: "最多可保存3张收据等照片。点击照片可放大查看。",
-            zhHant: "最多可儲存3張收據等照片。點擊照片可放大查看。",
-            ko: "영수증 등의 사진을 최대 3장까지 저장할 수 있습니다. 사진을 탭하면 확대됩니다.",
-            es: "Puedes guardar hasta 3 fotos, como recibos. Toca una foto para ampliarla.",
-            pt: "Você pode salvar até 3 fotos, como recibos. Toque em uma foto para ampliá-la."
-        )
-    }
-
-    private var scanText: String {
-        language.text(
-            ja: "写真からレシートを読み取る", en: "Scan Receipt from Photo",
-            zhHans: "从照片识别收据", zhHant: "從照片辨識收據",
-            ko: "사진에서 영수증 인식", es: "Leer recibo de la foto",
-            pt: "Ler recibo da foto"
-        )
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: "camera.fill")
-                .font(.headline)
-                .foregroundStyle(AppTheme.primary)
+            Label(
+                text(
+                    "添付写真", "Attached Photos", "附件照片", "附件照片",
+                    "첨부 사진", "Fotos adjuntas", "Fotos anexadas"
+                ),
+                systemImage: "paperclip"
+            )
+            .font(.headline)
+            .foregroundStyle(AppTheme.primary)
 
             if !imageData.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -88,12 +43,13 @@ struct ReceiptPhotoPickerCard: View {
                         maxSelectionCount: remainingCount,
                         matching: .images
                     ) {
-                        Label(libraryText, systemImage: "photo.on.rectangle")
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                            .background(AppTheme.primary.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        actionLabel(
+                            text(
+                                "写真を選ぶ", "Choose Photos", "选择照片", "選擇照片",
+                                "사진 선택", "Elegir fotos", "Escolher fotos"
+                            ),
+                            symbol: "photo.on.rectangle"
+                        )
                     }
                     .buttonStyle(.plain)
                     .simultaneousGesture(TapGesture().onEnded { dismissKeyboard() })
@@ -102,111 +58,69 @@ struct ReceiptPhotoPickerCard: View {
                         dismissKeyboard()
                         DispatchQueue.main.async { openCamera() }
                     } label: {
-                        Label(cameraText, systemImage: "camera.fill")
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                            .background(AppTheme.primary.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        actionLabel(
+                            text(
+                                "写真を撮る", "Take Photo", "拍摄照片", "拍攝照片",
+                                "사진 촬영", "Tomar foto", "Tirar foto"
+                            ),
+                            symbol: "camera.fill"
+                        )
                     }
                     .buttonStyle(.plain)
                 }
             }
 
-            if !imageData.isEmpty {
-                Button(action: choosePhotoToScan) {
-                    Group {
-                        if isScanning {
-                            HStack {
-                                ProgressView()
-                                Text(language.text(
-                                    ja: "読み取り中…", en: "Scanning…",
-                                    zhHans: "识别中…", zhHant: "辨識中…",
-                                    ko: "인식 중…", es: "Leyendo…", pt: "Lendo…"
-                                ))
-                            }
-                        } else {
-                            Label(scanText, systemImage: "doc.text.viewfinder")
-                        }
-                    }
-                    .font(.subheadline.bold())
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
-                    .background(AppTheme.secondary.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                .disabled(isScanning)
-            }
-
-            Text(helpText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(text(
+                "記録用の写真を最大3枚まで添付できます。レシートの読み取りは、画面上部の「レシートから費用を入力」を使ってください。",
+                "Attach up to 3 photos for reference. To scan a receipt, use “Enter Expense from Receipt” at the top of the screen.",
+                "最多可附加3张照片作为记录。要识别收据，请使用画面顶部的“从收据输入费用”。",
+                "最多可附加3張照片作為記錄。要辨識收據，請使用畫面頂部的「從收據輸入費用」。",
+                "기록용 사진을 최대 3장까지 첨부할 수 있습니다. 영수증 인식은 화면 상단의 ‘영수증으로 비용 입력’을 사용하세요.",
+                "Adjunta hasta 3 fotos como referencia. Para leer un recibo, usa «Introducir gasto desde recibo» arriba.",
+                "Anexe até 3 fotos como referência. Para ler um recibo, use “Inserir despesa pelo recibo” no topo."
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .appCard()
-        .onChange(of: pickerItems) { _, items in
-            load(items)
-        }
+        .onChange(of: pickerItems) { _, items in load(items) }
         .sheet(isPresented: previewBinding) { photoPreview }
-        .sheet(item: $scanResult) { result in
-            ReceiptOCRReviewView(
-                result: result,
-                currency: currency,
-                onApply: onApplyOCR
-            )
-            .environmentObject(profileStore)
-        }
         .fullScreenCover(isPresented: $showCamera) {
             CameraImagePicker { image in addCameraImage(image) }
                 .ignoresSafeArea()
         }
         .alert(
-            language.text(
-                ja: "カメラを使用できません", en: "Camera Unavailable",
-                zhHans: "无法使用相机", zhHant: "無法使用相機",
-                ko: "카메라를 사용할 수 없습니다",
-                es: "Cámara no disponible", pt: "Câmera indisponível"
+            text(
+                "カメラを使用できません", "Camera Unavailable",
+                "无法使用相机", "無法使用相機", "카메라를 사용할 수 없습니다",
+                "Cámara no disponible", "Câmera indisponível"
             ),
             isPresented: $showCameraUnavailable
         ) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(language.text(
-                ja: "Simulatorではカメラを使用できません。実機のiPhoneで確認してください。",
-                en: "The camera is unavailable in Simulator. Test this feature on a real iPhone.",
-                zhHans: "Simulator无法使用相机。请在真实的iPhone上进行测试。",
-                zhHant: "Simulator無法使用相機。請在實際的iPhone上測試。",
-                ko: "Simulator에서는 카메라를 사용할 수 없습니다. 실제 iPhone에서 테스트하세요.",
-                es: "La cámara no está disponible en Simulator. Pruébala en un iPhone real.",
-                pt: "A câmera não está disponível no Simulator. Teste em um iPhone real."
+            Text(text(
+                "Simulatorではカメラを使用できません。実機のiPhoneで確認してください。",
+                "The camera is unavailable in Simulator. Test this feature on a real iPhone.",
+                "Simulator无法使用相机。请在真实的iPhone上进行测试。",
+                "Simulator無法使用相機。請在實際的iPhone上測試。",
+                "Simulator에서는 카메라를 사용할 수 없습니다. 실제 iPhone에서 테스트하세요.",
+                "La cámara no está disponible en Simulator. Pruébala en un iPhone real.",
+                "A câmera não está disponível no Simulator. Teste em um iPhone real."
             ))
         }
-        .confirmationDialog(
-            language.text(
-                ja: "読み取る写真を選択", en: "Choose a Photo to Scan",
-                zhHans: "选择要识别的照片", zhHant: "選擇要辨識的照片",
-                ko: "인식할 사진 선택", es: "Elige una foto", pt: "Escolha uma foto"
-            ),
-            isPresented: $showOCRPhotoSelection,
-            titleVisibility: .visible
-        ) {
-            ForEach(imageData.indices, id: \.self) { index in
-                Button(photoLabel(index)) { scanPhoto(at: index) }
-            }
-            Button(language.t(.cancel), role: .cancel) {}
-        }
-        .alert(
-            language.text(
-                ja: "読み取れませんでした", en: "Could Not Scan Receipt",
-                zhHans: "无法识别", zhHant: "無法辨識",
-                ko: "인식할 수 없습니다", es: "No se pudo leer", pt: "Não foi possível ler"
-            ),
-            isPresented: scanErrorBinding
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(scanErrorMessage ?? "")
-        }
+    }
+
+    private func actionLabel(_ title: String, symbol: String) -> some View {
+        Label(title, systemImage: symbol)
+            .font(.subheadline.bold())
+            .lineLimit(2)
+            .minimumScaleFactor(0.75)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(AppTheme.primary.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     @ViewBuilder
@@ -272,10 +186,9 @@ struct ReceiptPhotoPickerCard: View {
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(language.text(
-                        ja: "閉じる", en: "Close",
-                        zhHans: "关闭", zhHant: "關閉",
-                        ko: "닫기", es: "Cerrar", pt: "Fechar"
+                    Button(text(
+                        "閉じる", "Close", "关闭", "關閉",
+                        "닫기", "Cerrar", "Fechar"
                     )) {
                         previewIndex = nil
                     }
@@ -290,68 +203,13 @@ struct ReceiptPhotoPickerCard: View {
             showCameraUnavailable = true
             return
         }
-
         showCamera = true
     }
 
     private func addCameraImage(_ image: UIImage) {
         guard imageData.count < 3,
               let data = image.jpegData(compressionQuality: 0.9) else { return }
-
         imageData.append(data)
-    }
-
-    private func choosePhotoToScan() {
-        dismissKeyboard()
-        guard imageData.count != 1 else {
-            scanPhoto(at: 0)
-            return
-        }
-        showOCRPhotoSelection = true
-    }
-
-    private func scanPhoto(at index: Int) {
-        guard imageData.indices.contains(index), !isScanning else { return }
-        let data = imageData[index]
-        isScanning = true
-
-        Task {
-            do {
-                let result = try await Task.detached(priority: .userInitiated) {
-                    try ReceiptOCRService.recognize(
-                        imageData: data,
-                        inputCurrency: currency
-                    )
-                }.value
-                scanResult = result
-            } catch {
-                scanErrorMessage = language.text(
-                    ja: "文字を認識できませんでした。レシート全体が明るく、まっすぐ写っている写真でもう一度試してください。",
-                    en: "No text was recognized. Try again with a bright, straight photo showing the whole receipt.",
-                    zhHans: "未能识别文字。请使用明亮、端正且包含完整收据的照片重试。",
-                    zhHant: "未能辨識文字。請使用明亮、端正且包含完整收據的照片重試。",
-                    ko: "텍스트를 인식하지 못했습니다. 영수증 전체가 밝고 똑바로 보이는 사진으로 다시 시도하세요.",
-                    es: "No se reconoció texto. Prueba con una foto clara, recta y que muestre todo el recibo.",
-                    pt: "Nenhum texto foi reconhecido. Tente uma foto clara, reta e com o recibo inteiro."
-                )
-            }
-            isScanning = false
-        }
-    }
-
-    private func photoLabel(_ index: Int) -> String {
-        language.text(
-            ja: "写真 \(index + 1)", en: "Photo \(index + 1)",
-            zhHans: "照片 \(index + 1)", zhHant: "照片 \(index + 1)",
-            ko: "사진 \(index + 1)", es: "Foto \(index + 1)", pt: "Foto \(index + 1)"
-        )
-    }
-
-    private var scanErrorBinding: Binding<Bool> {
-        Binding(
-            get: { scanErrorMessage != nil },
-            set: { if !$0 { scanErrorMessage = nil } }
-        )
     }
 
     private func load(_ items: [PhotosPickerItem]) {
@@ -359,14 +217,12 @@ struct ReceiptPhotoPickerCard: View {
 
         Task {
             var loaded: [Data] = []
-
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self),
                    UIImage(data: data) != nil {
                     loaded.append(data)
                 }
             }
-
             imageData.append(contentsOf: loaded.prefix(max(0, 3 - imageData.count)))
             pickerItems = []
         }
@@ -378,6 +234,16 @@ struct ReceiptPhotoPickerCard: View {
             to: nil,
             from: nil,
             for: nil
+        )
+    }
+
+    private func text(
+        _ ja: String, _ en: String, _ zhHans: String, _ zhHant: String,
+        _ ko: String, _ es: String, _ pt: String
+    ) -> String {
+        language.text(
+            ja: ja, en: en, zhHans: zhHans, zhHant: zhHant,
+            ko: ko, es: es, pt: pt
         )
     }
 }

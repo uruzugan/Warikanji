@@ -457,7 +457,10 @@ struct ParticipantManagementView: View {
     }
 
     private func blockedExpenseMessage(_ titles: [String], payer: Bool) -> String {
-        let preview = titles.prefix(3).joined(separator: "、")
+        let preview = titles.prefix(3).map { title in
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? Expense.untitledName(for: language) : trimmed
+        }.joined(separator: "、")
         let suffix = titles.count > 3 ? " +\(titles.count - 3)" : ""
 
         if payer {

@@ -164,7 +164,7 @@ struct EventShareCardView: View {
 
                     ForEach(group.expenses) { expense in
                         HStack {
-                            Text("• \(expense.title)")
+                            Text("• \(expense.displayTitle(for: language))")
                                 .lineLimit(1)
 
                             Spacer()
@@ -184,7 +184,7 @@ struct EventShareCardView: View {
 
                     ForEach(event.undatedExpenses) { expense in
                         HStack {
-                            Text("• \(expense.title)")
+                            Text("• \(expense.displayTitle(for: language))")
                                 .lineLimit(1)
 
                             Spacer()

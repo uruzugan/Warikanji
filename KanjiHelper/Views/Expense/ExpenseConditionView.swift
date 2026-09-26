@@ -115,7 +115,7 @@ struct ExpenseConditionView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(expense.title).font(.headline).lineLimit(1)
+                Text(expense.displayTitle(for: language)).font(.headline).lineLimit(1)
 
                 Text(expense.category.displayName(for: language))
                     .font(.caption)

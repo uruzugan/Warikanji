@@ -40,7 +40,7 @@ struct ExpenseEditView: View {
     private var amount: Int { currency.minorUnits(from: amountText) ?? 0 }
 
     private var saveDisabled: Bool {
-        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || amount <= 0 || payerId == nil
+        amount <= 0 || payerId == nil
     }
 
     private var currentSplitMethod: SplitMethod {
@@ -57,47 +57,49 @@ struct ExpenseEditView: View {
         delete: String,
         warning: String
     ) {
+        let expenseTitle = expense.displayTitle(for: language)
+
         switch language {
         case .japanese:
             return (
                 "費用を編集", "負担条件", "現在", "この費用を削除",
-                "変更を保存", "「\(expense.title)」を削除しますか？",
+                "変更を保存", "「\(expenseTitle)」を削除しますか？",
                 "削除する", "この操作は取り消せません。"
             )
         case .english:
             return (
                 "Edit Expense", "Split Conditions", "Current", "Delete This Expense",
-                "Save Changes", "Delete “\(expense.title)”?",
+                "Save Changes", "Delete “\(expenseTitle)”?",
                 "Delete", "This action cannot be undone."
             )
         case .simplifiedChinese:
             return (
                 "编辑费用", "分摊条件", "当前", "删除此费用",
-                "保存更改", "要删除“\(expense.title)”吗？",
+                "保存更改", "要删除“\(expenseTitle)”吗？",
                 "删除", "此操作无法撤销。"
             )
         case .traditionalChinese:
             return (
                 "編輯費用", "分攤條件", "目前", "刪除此費用",
-                "儲存變更", "要刪除「\(expense.title)」嗎？",
+                "儲存變更", "要刪除「\(expenseTitle)」嗎？",
                 "刪除", "此操作無法復原。"
             )
         case .korean:
             return (
                 "비용 편집", "부담 조건", "현재", "이 비용 삭제",
-                "변경 사항 저장", "“\(expense.title)”을 삭제하시겠습니까?",
+                "변경 사항 저장", "“\(expenseTitle)”을 삭제하시겠습니까?",
                 "삭제", "이 작업은 되돌릴 수 없습니다."
             )
         case .spanish:
             return (
                 "Editar gasto", "Condiciones de reparto", "Actual", "Eliminar este gasto",
-                "Guardar cambios", "¿Eliminar «\(expense.title)»?",
+                "Guardar cambios", "¿Eliminar «\(expenseTitle)»?",
                 "Eliminar", "Esta acción no se puede deshacer."
             )
         case .portuguese:
             return (
                 "Editar despesa", "Condições de divisão", "Atual", "Excluir esta despesa",
-                "Salvar alterações", "Excluir “\(expense.title)”?",
+                "Salvar alterações", "Excluir “\(expenseTitle)”?",
                 "Excluir", "Esta ação não pode ser desfeita."
             )
         }
@@ -107,12 +109,18 @@ struct ExpenseEditView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    ReceiptScannerCard(
+                        imageData: $receiptImageData,
+                        currency: currency,
+                        onApply: applyOCR
+                    )
+                    .environmentObject(profileStore)
+
                     ExpenseFormHero(
                         title: title,
                         amount: amount,
                         category: category,
-                        currency: currency,
-                        isEditing: true
+                        currency: currency
                     )
 
                     ExpenseInfoCard(
@@ -139,11 +147,7 @@ struct ExpenseEditView: View {
 
                     SettlementRoundingPicker(rounding: $rounding, currency: currency)
 
-                    ReceiptPhotoPickerCard(
-                        imageData: $receiptImageData,
-                        currency: currency,
-                        onApplyOCR: applyOCR
-                    )
+                    ReceiptPhotoPickerCard(imageData: $receiptImageData)
                         .environmentObject(profileStore)
 
                     conditionCard
