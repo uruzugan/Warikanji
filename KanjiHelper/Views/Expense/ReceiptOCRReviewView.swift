@@ -1,4 +1,6 @@
 import SwiftUI
+import Translation
+import NaturalLanguage
 
 struct ReceiptOCRReviewView: View {
     @EnvironmentObject private var profileStore: ProfileStore
@@ -13,6 +15,9 @@ struct ReceiptOCRReviewView: View {
     @State private var hasDate: Bool
     @State private var date: Date
     @State private var showsRecognizedText = false
+    @State private var translatedText: String?
+    @State private var isTranslating = true
+    @State private var translationFailed = false
 
     init(
         result: ReceiptOCRResult,
@@ -22,14 +27,22 @@ struct ReceiptOCRReviewView: View {
         self.result = result
         self.currency = currency
         self.onApply = onApply
+        let hasCurrencyMismatch = result.detectedCurrency.map { $0 != currency } ?? false
         _merchant = State(initialValue: result.merchant ?? "")
-        _amountText = State(initialValue: result.amountMinorUnits.map(currency.inputText) ?? "")
+        _amountText = State(
+            initialValue: hasCurrencyMismatch
+                ? ""
+                : result.amountMinorUnits.map(currency.inputText) ?? ""
+        )
         _hasDate = State(initialValue: result.date != nil)
         _date = State(initialValue: result.date ?? Date())
     }
 
     private var language: AppLanguage { profileStore.activeLanguage }
     private var amount: Int? { currency.minorUnits(from: amountText) }
+    private var targetLanguage: Locale.Language {
+        Locale.Language(identifier: language.localeIdentifier)
+    }
     private var canApply: Bool {
         !merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
             amount != nil || hasDate
@@ -40,8 +53,8 @@ struct ReceiptOCRReviewView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     warningCard
-                    resultCard
                     currencyCard
+                    resultCard
                     recognizedTextCard
                     applyButton
                 }
@@ -62,6 +75,9 @@ struct ReceiptOCRReviewView: View {
             }
         }
         .tint(AppTheme.primary)
+        .translationTask(source: nil, target: targetLanguage) { session in
+            await translateRecognizedText(using: session)
+        }
     }
 
     private var warningCard: some View {
@@ -146,14 +162,27 @@ struct ReceiptOCRReviewView: View {
                 .font(.subheadline.bold())
 
                 if detected != currency {
+                    if let scannedAmount = result.amountMinorUnits {
+                        Text(text(
+                            ja: "読み取った金額：\(detected.formatted(minorUnits: scannedAmount))",
+                            en: "Scanned amount: \(detected.formatted(minorUnits: scannedAmount))",
+                            zhHans: "识别金额：\(detected.formatted(minorUnits: scannedAmount))",
+                            zhHant: "辨識金額：\(detected.formatted(minorUnits: scannedAmount))",
+                            ko: "인식한 금액: \(detected.formatted(minorUnits: scannedAmount))",
+                            es: "Importe leído: \(detected.formatted(minorUnits: scannedAmount))",
+                            pt: "Valor lido: \(detected.formatted(minorUnits: scannedAmount))"
+                        ))
+                        .font(.subheadline.bold())
+                    }
+
                     Text(text(
-                        ja: "イベント通貨は\(currency.code)です。現在は費用ごとの通貨に未対応のため、金額は\(currency.code)として反映されます。必要なら修正してください。",
-                        en: "The event uses \(currency.code). Per-expense currencies are not available yet, so the amount will be applied as \(currency.code). Edit it if needed.",
-                        zhHans: "活动货币为\(currency.code)。目前尚不支持每笔费用使用不同货币，因此金额将按\(currency.code)应用，请按需修改。",
-                        zhHant: "活動貨幣為\(currency.code)。目前尚不支援每筆費用使用不同貨幣，因此金額將以\(currency.code)套用，請視需要修改。",
-                        ko: "이벤트 통화는 \(currency.code)입니다. 비용별 통화는 아직 지원되지 않아 금액이 \(currency.code)로 적용됩니다. 필요하면 수정하세요.",
-                        es: "El evento usa \(currency.code). Aún no se admiten monedas por gasto, así que el importe se aplicará como \(currency.code). Edítalo si es necesario.",
-                        pt: "O evento usa \(currency.code). Moedas por despesa ainda não são aceitas, então o valor será aplicado como \(currency.code). Edite se necessário."
+                        ja: "イベント通貨は\(currency.code)です。誤った通貨で保存しないよう、金額は自動入力していません。\(currency.code)への換算額を入力するか、イベント通貨を確認してください。",
+                        en: "The event uses \(currency.code). To prevent saving the wrong currency, the amount was not filled in. Enter the converted \(currency.code) amount or check the event currency.",
+                        zhHans: "活动货币为\(currency.code)。为避免以错误货币保存，金额未自动填写。请输入换算后的\(currency.code)金额，或检查活动货币。",
+                        zhHant: "活動貨幣為\(currency.code)。為避免以錯誤貨幣儲存，金額未自動填入。請輸入換算後的\(currency.code)金額，或確認活動貨幣。",
+                        ko: "이벤트 통화는 \(currency.code)입니다. 잘못된 통화로 저장하지 않도록 금액을 자동 입력하지 않았습니다. \(currency.code) 환산 금액을 입력하거나 이벤트 통화를 확인하세요.",
+                        es: "El evento usa \(currency.code). Para evitar guardar una moneda incorrecta, el importe no se rellenó. Introduce el valor convertido a \(currency.code) o revisa la moneda del evento.",
+                        pt: "O evento usa \(currency.code). Para evitar salvar na moeda errada, o valor não foi preenchido. Digite o valor convertido para \(currency.code) ou confira a moeda do evento."
                     ))
                     .font(.caption)
                     .foregroundStyle(AppTheme.warning)
@@ -166,16 +195,57 @@ struct ReceiptOCRReviewView: View {
 
     private var recognizedTextCard: some View {
         DisclosureGroup(isExpanded: $showsRecognizedText) {
-            Text(result.recognizedText)
-                .font(.caption.monospaced())
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 8)
+            VStack(alignment: .leading, spacing: 10) {
+                if isTranslating {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(text(
+                            ja: "翻訳中…", en: "Translating…",
+                            zhHans: "正在翻译…", zhHant: "正在翻譯…",
+                            ko: "번역 중…", es: "Traduciendo…", pt: "Traduzindo…"
+                        ))
+                    }
+                } else if let translatedText {
+                    Text(translatedText)
+                        .textSelection(.enabled)
+
+                    if translatedText != result.recognizedText {
+                        Divider()
+                        DisclosureGroup(text(
+                            ja: "原文を表示", en: "Show Original",
+                            zhHans: "显示原文", zhHant: "顯示原文",
+                            ko: "원문 보기", es: "Mostrar original", pt: "Mostrar original"
+                        )) {
+                            Text(result.recognizedText)
+                                .font(.caption.monospaced())
+                                .textSelection(.enabled)
+                                .padding(.top, 6)
+                        }
+                    }
+                }
+
+                if translationFailed {
+                    Text(text(
+                        ja: "翻訳できなかったため原文を表示しています。",
+                        en: "The original text is shown because translation was unavailable.",
+                        zhHans: "无法翻译，因此显示原文。", zhHant: "無法翻譯，因此顯示原文。",
+                        ko: "번역할 수 없어 원문을 표시합니다.",
+                        es: "Se muestra el original porque la traducción no está disponible.",
+                        pt: "O original é exibido porque a tradução não está disponível."
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 8)
         } label: {
             Label(text(
-                ja: "認識した全文", en: "Recognized Text",
-                zhHans: "识别的全文", zhHant: "辨識的全文",
-                ko: "인식된 전체 텍스트", es: "Texto reconocido", pt: "Texto reconhecido"
+                ja: "認識した全文（翻訳）", en: "Recognized Text (Translated)",
+                zhHans: "识别的全文（翻译）", zhHant: "辨識的全文（翻譯）",
+                ko: "인식된 전체 텍스트 (번역)", es: "Texto reconocido (traducido)",
+                pt: "Texto reconhecido (traduzido)"
             ), systemImage: "text.alignleft")
             .font(.headline)
         }
@@ -213,6 +283,41 @@ struct ReceiptOCRReviewView: View {
             recognizedText: result.recognizedText
         ))
         dismiss()
+    }
+
+    private func translateRecognizedText(using session: TranslationSession) async {
+        isTranslating = true
+        translationFailed = false
+
+        if recognizedLanguageMatchesAppLanguage {
+            translatedText = result.recognizedText
+            isTranslating = false
+            return
+        }
+
+        do {
+            translatedText = try await session.translate(result.recognizedText).targetText
+        } catch {
+            translatedText = result.recognizedText
+            translationFailed = true
+        }
+
+        isTranslating = false
+    }
+
+    private var recognizedLanguageMatchesAppLanguage: Bool {
+        guard let recognized = NLLanguageRecognizer.dominantLanguage(
+            for: result.recognizedText
+        )?.rawValue else { return false }
+
+        switch language {
+        case .simplifiedChinese:
+            return recognized == "zh-Hans"
+        case .traditionalChinese:
+            return recognized == "zh-Hant"
+        default:
+            return recognized.split(separator: "-").first.map(String.init) == language.rawValue
+        }
     }
 
     private func text(

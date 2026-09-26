@@ -59,10 +59,11 @@ enum ReceiptOCRService {
 
         let text = lines.joined(separator: "\n")
         let detectedCurrency = detectCurrency(in: text, fallback: inputCurrency)
+        let amountCurrency = detectedCurrency ?? inputCurrency
 
         return ReceiptOCRResult(
             merchant: detectMerchant(in: lines),
-            amountMinorUnits: detectAmount(in: lines, currency: inputCurrency),
+            amountMinorUnits: detectAmount(in: lines, currency: amountCurrency),
             date: detectDate(in: text),
             detectedCurrency: detectedCurrency,
             recognizedText: text
@@ -92,28 +93,38 @@ enum ReceiptOCRService {
     ) -> Int? {
         let totalWords = [
             "TOTAL", "GRAND TOTAL", "AMOUNT DUE", "BALANCE DUE", "合計", "総額", "お会計",
-            "支払額", "合计", "总计", "總計", "합계", "총액", "A PAGAR"
+            "支払額", "合计", "总计", "金额合计", "總計", "金額合計", "합계", "총액", "A PAGAR"
         ]
-        let secondaryWords = ["SUBTOTAL", "小計", "TAX", "税", "CHANGE", "お釣り", "釣銭"]
+        let subtotalWords = ["SUBTOTAL", "小計", "商品小计", "商品小計"]
+        let excludedWords = [
+            "TAX", "税", "CHANGE", "お釣り", "釣銭", "找零",
+            "TEL", "PHONE", "電話", "电话", "FAX", "热线", "熱線",
+            "CASHIER", "收银员", "收銀員", "店員", "收据员", "收據員"
+        ]
         let currencyMarks = ["¥", "￥", "$", "€", "£", "₩", "฿", currency.code]
         let datePattern = #"\d{1,4}[./\-年]\d{1,2}[./\-月]\d{1,4}"#
-        let phoneWords = ["TEL", "PHONE", "電話", "FAX"]
         var candidates: [(score: Int, amount: Int)] = []
 
         for (index, line) in lines.enumerated() {
             let upper = line.uppercased()
             let isTotal = totalWords.contains(where: upper.contains)
+            let isSubtotal = subtotalWords.contains(where: upper.contains)
+            let previous = index > 0 ? lines[index - 1].uppercased() : ""
+            let followsTotal = totalWords.contains(where: previous.contains)
+            let followsSubtotal = subtotalWords.contains(where: previous.contains)
             let looksLikeDate = line.range(of: datePattern, options: .regularExpression) != nil
-            let looksLikePhone = phoneWords.contains(where: upper.contains)
-            if !isTotal && (looksLikeDate || looksLikePhone) { continue }
+            let isExcluded = excludedWords.contains(where: upper.contains)
+            if !isTotal && !isSubtotal && (looksLikeDate || isExcluded) { continue }
 
-            var score = isTotal ? 100 : 0
+            var score = isTotal || followsTotal ? 120 : 0
+            if isSubtotal || followsSubtotal { score = max(score, 80) }
             if currencyMarks.contains(where: upper.contains) { score += 25 }
-            if !isTotal && secondaryWords.contains(where: upper.contains) { score -= 40 }
-            score += min(index, 20)
+            score += min(index, 10)
 
-            for amount in numbers(in: line, currency: currency) {
-                candidates.append((score, amount))
+            for candidate in numbers(in: line, currency: currency) {
+                let digitCount = candidate.token.filter(\.isNumber).count
+                let adjustedScore = digitCount >= 7 ? score - 100 : score
+                candidates.append((adjustedScore, candidate.amount))
             }
         }
 
@@ -125,15 +136,16 @@ enum ReceiptOCRService {
     nonisolated private static func numbers(
         in line: String,
         currency: AppCurrency
-    ) -> [Int] {
-        let pattern = #"\d[\d.,\s]*\d|\d"#
+    ) -> [(token: String, amount: Int)] {
+        let pattern = #"\d+(?:[.,]\d+)*"#
         guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(line.startIndex..., in: line)
 
         return expression.matches(in: line, range: range).compactMap { match in
             guard let range = Range(match.range, in: line) else { return nil }
             let token = String(line[range]).trimmingCharacters(in: .whitespaces)
-            return currency.minorUnits(from: token)
+            guard let amount = currency.minorUnits(from: token) else { return nil }
+            return (token, amount)
         }
     }
 
@@ -211,6 +223,13 @@ enum ReceiptOCRService {
             entry.1.contains(where: upper.contains)
         })?.0 {
             return currency
+        }
+
+        let mainlandChinaMarkers = [
+            ".COM.CN", "商品小计", "金额合计", "收银员", "找零", "服务热线"
+        ]
+        if mainlandChinaMarkers.filter({ upper.contains($0) }).count >= 2 {
+            return .cny
         }
 
         if upper.contains("¥") || upper.contains("￥") {
