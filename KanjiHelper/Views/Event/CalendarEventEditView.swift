@@ -5,11 +5,12 @@ import UIKit
 
 struct CalendarEventEditView: UIViewControllerRepresentable {
     let event: Event
+    let language: AppLanguage
 
     @Environment(\.dismiss) private var dismiss
 
     func makeUIViewController(context: Context) -> CalendarHostViewController {
-        CalendarHostViewController(event: event) { dismiss() }
+        CalendarHostViewController(event: event, language: language) { dismiss() }
     }
 
     func updateUIViewController(_ uiViewController: CalendarHostViewController, context: Context) {}
@@ -17,12 +18,14 @@ struct CalendarEventEditView: UIViewControllerRepresentable {
 
 final class CalendarHostViewController: UIViewController, EKEventEditViewDelegate {
     private let event: Event
+    private let language: AppLanguage
     private let eventStore = EKEventStore()
     private let onDismiss: () -> Void
     private var hasStarted = false
 
-    init(event: Event, onDismiss: @escaping () -> Void) {
+    init(event: Event, language: AppLanguage, onDismiss: @escaping () -> Void) {
         self.event = event
+        self.language = language
         self.onDismiss = onDismiss
         super.init(nibName: nil, bundle: nil)
     }
@@ -63,7 +66,7 @@ final class CalendarHostViewController: UIViewController, EKEventEditViewDelegat
         let controller = EKEventEditViewController()
         let calendarEvent = EKEvent(eventStore: eventStore)
 
-        calendarEvent.title = event.title
+        calendarEvent.title = event.displayTitle(for: language)
         calendarEvent.startDate = event.date
         calendarEvent.endDate = max(event.endDate, event.date)
 

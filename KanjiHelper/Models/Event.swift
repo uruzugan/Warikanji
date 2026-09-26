@@ -76,6 +76,19 @@ struct Event: Identifiable, Codable, Equatable {
         expenses.reduce(0) { $0 + $1.amount }
     }
 
+    static func untitledName(for language: AppLanguage) -> String {
+        language.text(
+            ja: "名称未設定", en: "Untitled Event",
+            zhHans: "未命名活动", zhHant: "未命名活動",
+            ko: "이름 없는 이벤트", es: "Evento sin nombre", pt: "Evento sem nome"
+        )
+    }
+
+    func displayTitle(for language: AppLanguage) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? Self.untitledName(for: language) : trimmedTitle
+    }
+
     var calculationParticipantCount: Int {
         participants.count
     }

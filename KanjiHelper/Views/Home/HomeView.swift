@@ -31,7 +31,7 @@ struct HomeView: View {
             guard !query.isEmpty else { return typeMatches }
 
             return typeMatches &&
-                [event.title, event.location, event.memo, event.eventType.displayName(for: language)]
+                [event.displayTitle(for: language), event.location, event.memo, event.eventType.displayName(for: language)]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
 
@@ -126,7 +126,7 @@ struct HomeView: View {
     }
 
     private var deleteDialogTitle: String {
-        let title = eventPendingDeletion?.title ?? ""
+        let title = eventPendingDeletion?.displayTitle(for: language) ?? ""
         return t("「\(title)」を削除しますか？", "Delete “\(title)”?", "删除“\(title)”吗？", "刪除「\(title)」嗎？", "“\(title)”을 삭제하시겠습니까?", "¿Eliminar «\(title)»?", "Excluir “\(title)”?")
     }
 
@@ -316,20 +316,20 @@ struct HomeView: View {
         switch sortOption {
         case .dateAscending:
             return lhs.date == rhs.date
-                ? lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+                ? lhs.displayTitle(for: language).localizedStandardCompare(rhs.displayTitle(for: language)) == .orderedAscending
                 : lhs.date < rhs.date
 
         case .dateDescending:
             return lhs.date == rhs.date
-                ? lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+                ? lhs.displayTitle(for: language).localizedStandardCompare(rhs.displayTitle(for: language)) == .orderedAscending
                 : lhs.date > rhs.date
 
         case .nameAscending:
-            let comparison = lhs.title.localizedStandardCompare(rhs.title)
+            let comparison = lhs.displayTitle(for: language).localizedStandardCompare(rhs.displayTitle(for: language))
             return comparison == .orderedSame ? lhs.date < rhs.date : comparison == .orderedAscending
 
         case .nameDescending:
-            let comparison = lhs.title.localizedStandardCompare(rhs.title)
+            let comparison = lhs.displayTitle(for: language).localizedStandardCompare(rhs.displayTitle(for: language))
             return comparison == .orderedSame ? lhs.date < rhs.date : comparison == .orderedDescending
 
         case .amountDescending:
@@ -513,7 +513,7 @@ private struct EventHomeCard: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
-                        Text(event.title)
+                        Text(event.displayTitle(for: language))
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)

@@ -191,7 +191,7 @@ struct SettlementResultView: View {
 
     private func shareText(event: Event, result: SettlementResult) -> String {
         var lines = [
-            "【\(event.title)】",
+            "【\(event.displayTitle(for: language))】",
             language.settlementText(.resultTitle),
             "",
             "\(language.settlementText(.totalBill))：\(event.currency.formatted(minorUnits: event.totalExpenseAmount))"

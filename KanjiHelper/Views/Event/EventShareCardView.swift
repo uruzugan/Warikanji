@@ -93,7 +93,7 @@ struct EventShareCardView: View {
             .background(.white.opacity(0.14))
             .clipShape(Capsule())
 
-            Text(event.title)
+            Text(event.displayTitle(for: language))
                 .font(.system(size: 31, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(2)

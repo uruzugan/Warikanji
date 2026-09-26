@@ -26,7 +26,7 @@ struct EventEditView: View {
     private var registeredParticipantCount: Int { event?.registeredParticipantCount ?? 0 }
     private var minimumParticipantCount: Int { event?.minimumParticipantCount ?? 1 }
     private var unnamedCount: Int { max(participantCount - registeredParticipantCount, 0) }
-    private var isSaveDisabled: Bool { title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || endDate < date }
+    private var isSaveDisabled: Bool { endDate < date }
 
     private var expensesOutsideSelectedPeriod: [Expense] {
         guard let event else { return [] }
@@ -167,7 +167,7 @@ struct EventEditView: View {
     private var eventInfoCard: some View {
         VStack(spacing: 0) {
             inputRow(icon: "pencil", title: language.eventText(.eventName)) {
-                TextField(language.eventText(.eventName), text: $title)
+                TextField(language.eventText(.optional), text: $title)
                     .multilineTextAlignment(.trailing)
                     .focused($focusedField, equals: .title)
             }

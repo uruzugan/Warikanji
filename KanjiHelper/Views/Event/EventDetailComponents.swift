@@ -21,7 +21,7 @@ struct EventDetailHero: View {
                     .font(.caption.bold())
                     .foregroundStyle(.white.opacity(0.8))
 
-                Text(event.title)
+                Text(event.displayTitle(for: language))
                     .font(.title3.bold())
                     .foregroundStyle(.white)
                     .lineLimit(2)

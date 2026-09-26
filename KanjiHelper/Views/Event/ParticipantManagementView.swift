@@ -142,7 +142,7 @@ struct ParticipantManagementView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 17))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(event.title)
+                Text(event.displayTitle(for: language))
                     .font(.headline)
                     .lineLimit(1)
 

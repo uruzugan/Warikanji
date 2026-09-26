@@ -62,7 +62,7 @@ struct EventDetailView: View {
             .padding(.bottom, 30)
         }
         .background(AppTheme.background)
-        .navigationTitle(event.title)
+        .navigationTitle(event.displayTitle(for: language))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -75,7 +75,7 @@ struct EventDetailView: View {
                 .environmentObject(profileStore)
         }
         .sheet(isPresented: $isShowingCalendarEditor) {
-            CalendarEventEditView(event: event)
+            CalendarEventEditView(event: event, language: language)
         }
         .sheet(item: $shareImageItem) { item in
             ActivityShareView(activityItems: [item.image])
@@ -277,10 +277,11 @@ struct EventDetailView: View {
     }
 
     private func duplicateTitle(for event: Event) -> String {
-        t(
-            "\(event.title)のコピー", "\(event.title) Copy",
-            "\(event.title) 副本", "\(event.title) 副本",
-            "\(event.title) 복사본", "\(event.title) - copia", "\(event.title) - cópia"
+        let title = event.displayTitle(for: language)
+        return t(
+            "\(title)のコピー", "\(title) Copy",
+            "\(title) 副本", "\(title) 副本",
+            "\(title) 복사본", "\(title) - copia", "\(title) - cópia"
         )
     }
 
@@ -291,12 +292,13 @@ struct EventDetailView: View {
     }
 
     private func shareText(for event: Event) -> String {
+        let title = event.displayTitle(for: language)
         let schedule = event.scheduleText(for: language, includeYear: true)
         let location = event.location.trimmingCharacters(in: .whitespacesAndNewlines)
         let memo = event.memo.trimmingCharacters(in: .whitespacesAndNewlines)
 
         var lines = [
-            "【\(event.title)】",
+            "【\(title)】",
             "",
             "\(t("日時", "Date", "日期", "日期", "날짜", "Fecha", "Data"))：\(schedule)"
         ]
@@ -322,14 +324,15 @@ struct EventDetailView: View {
     }
 
     private func deleteDialogTitle(_ event: Event) -> String {
-        t(
-            "「\(event.title)」を削除しますか？",
-            "Delete “\(event.title)”?",
-            "删除“\(event.title)”吗？",
-            "刪除「\(event.title)」嗎？",
-            "“\(event.title)”을 삭제하시겠습니까?",
-            "¿Eliminar «\(event.title)»?",
-            "Excluir “\(event.title)”?"
+        let title = event.displayTitle(for: language)
+        return t(
+            "「\(title)」を削除しますか？",
+            "Delete “\(title)”?",
+            "删除“\(title)”吗？",
+            "刪除「\(title)」嗎？",
+            "“\(title)”을 삭제하시겠습니까?",
+            "¿Eliminar «\(title)»?",
+            "Excluir “\(title)”?"
         )
     }
 }

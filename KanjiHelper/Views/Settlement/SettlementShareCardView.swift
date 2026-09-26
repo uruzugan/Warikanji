@@ -28,7 +28,7 @@ struct SettlementShareCardView: View {
                 header
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(event.title).font(.system(size: 28, weight: .bold, design: .rounded)).lineLimit(2)
+                    Text(event.displayTitle(for: language)).font(.system(size: 28, weight: .bold, design: .rounded)).lineLimit(2)
                     Text(language.settlementText(.resultTitle)).font(.subheadline.bold()).opacity(0.75)
                 }
 

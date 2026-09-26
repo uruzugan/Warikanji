@@ -17,10 +17,6 @@ struct EventCreateView: View {
 
     private var language: AppLanguage { profileStore.activeLanguage }
 
-    private var isSaveDisabled: Bool {
-        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -78,8 +74,6 @@ struct EventCreateView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 17))
         }
         .buttonStyle(.plain)
-        .disabled(isSaveDisabled)
-        .opacity(isSaveDisabled ? 0.45 : 1)
     }
 
     private func loadDefaultsIfNeeded() {

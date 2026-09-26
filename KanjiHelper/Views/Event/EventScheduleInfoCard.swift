@@ -21,7 +21,7 @@ struct EventScheduleInfoCard: View {
 
             VStack(spacing: 0) {
                 EventInputRow(icon: "textformat", title: language.eventText(.eventName)) {
-                    TextField(language.eventText(.eventNameExample), text: $title)
+                    TextField(language.eventText(.optional), text: $title)
                         .multilineTextAlignment(.trailing)
                 }
 

@@ -9,7 +9,7 @@ struct EventCreateHero: View {
 
     private var titleText: String {
         let value = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return value.isEmpty ? language.eventText(.createPrompt) : value
+        return value.isEmpty ? Event.untitledName(for: language) : value
     }
 
     private var dateText: String {
@@ -74,7 +74,7 @@ struct EventBasicInfoCard: View {
 
             VStack(spacing: 0) {
                 EventInputRow(icon: "textformat", title: language.eventText(.eventName)) {
-                    TextField(language.eventText(.eventNameExample), text: $title).multilineTextAlignment(.trailing)
+                    TextField(language.eventText(.optional), text: $title).multilineTextAlignment(.trailing)
                 }
 
                 Divider().padding(.leading, 44)
