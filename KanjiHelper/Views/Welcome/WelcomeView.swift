@@ -11,9 +11,7 @@ struct WelcomeView: View {
     @State private var referenceCurrency = AppCurrency.deviceDefault()
     @State private var showTutorial = false
 
-    private var isJapanese: Bool { language == .japanese }
     private var isCreateDisabled: Bool { name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    private func text(_ ja: String, _ en: String) -> String { isJapanese ? ja : en }
 
     var body: some View {
         NavigationStack {
@@ -32,7 +30,7 @@ struct WelcomeView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button(text("完了", "Done")) { isNameFocused = false }
+                    Button(language.t(.done)) { isNameFocused = false }
                 }
             }
         }
@@ -70,32 +68,29 @@ struct WelcomeView: View {
 
     private var featureCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(text("幹事をもっとシンプルに", "Make organizing easier"))
+            Text(language.t(.organizingEasier))
                 .font(.headline)
 
-            featureRow(symbol: "banknote.fill", text: text("費用をまとめて記録", "Track group expenses"))
-            featureRow(symbol: "slider.horizontal.3", text: text("負担額をかんたん調整", "Adjust each person's share"))
-            featureRow(symbol: "arrow.left.arrow.right", text: text("誰が誰に払うか自動計算", "Calculate who pays whom"))
-            featureRow(symbol: "checkmark.circle.fill", text: text("支払い状況まで確認", "Track payment status"))
+            featureRow(symbol: "banknote.fill", text: language.t(.trackExpenses))
+            featureRow(symbol: "slider.horizontal.3", text: language.t(.adjustShares))
+            featureRow(symbol: "arrow.left.arrow.right", text: language.t(.calculatePayments))
+            featureRow(symbol: "checkmark.circle.fill", text: language.t(.trackPaymentStatus))
         }
         .appCard()
     }
 
     private var accountCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(text("あなたのアカウント", "Your account"), systemImage: "person.fill")
+            Label(language.t(.yourAccount), systemImage: "person.fill")
                 .font(.headline)
                 .foregroundStyle(AppTheme.primary)
 
-            TextField(text("名前", "Name"), text: $name)
+            TextField(language.t(.name), text: $name)
                 .textContentType(.name)
                 .focused($isNameFocused)
                 .inputStyle()
 
-            Text(text(
-                "端末内に保存されるローカルアカウントです。",
-                "This account is stored locally on this device."
-            ))
+            Text(language.t(.localAccountDescription))
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -104,7 +99,7 @@ struct WelcomeView: View {
 
     private var preferenceCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label(text("言語と通貨", "Language & Currency"), systemImage: "globe")
+            Label(language.t(.languageAndCurrency), systemImage: "globe")
                 .font(.headline)
                 .foregroundStyle(AppTheme.primary)
 
@@ -119,20 +114,17 @@ struct WelcomeView: View {
 
             Divider()
 
-            preferenceRow(title: text("ホーム通貨", "Home currency")) {
+            preferenceRow(title: language.t(.homeCurrency)) {
                 currencyPicker(selection: $homeCurrency)
             }
 
             Divider()
 
-            preferenceRow(title: text("参考換算先", "Reference currency")) {
+            preferenceRow(title: language.t(.referenceCurrency)) {
                 currencyPicker(selection: $referenceCurrency)
             }
 
-            Text(text(
-                "海外イベントでは現地通貨の合計と、ここで選んだ通貨への参考換算額を表示できます。",
-                "For overseas events, Warikanji can show both the local total and an approximate value in your reference currency."
-            ))
+            Text(language.t(.overseasCurrencyDescription))
             .font(.caption)
             .foregroundStyle(.secondary)
         }
@@ -141,7 +133,7 @@ struct WelcomeView: View {
 
     private var startButton: some View {
         Button { startTutorial() } label: {
-            Text(text("ワリカンジをはじめる", "Start Warikanji"))
+            Text(language.t(.startWarikanji))
                 .font(.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)

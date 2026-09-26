@@ -38,7 +38,7 @@ private let appTexts: [[String]] = [
     ["名前はいつでも変更できます。", "You can change your name at any time.", "你可以随时更改姓名。", "你可以隨時更改姓名。", "이름은 언제든지 변경할 수 있습니다.", "Puedes cambiar tu nombre cuando quieras.", "Você pode alterar seu nome quando quiser."],
 
     ["言語と通貨", "Language & Currency", "语言与货币", "語言與貨幣", "언어 및 통화", "Idioma y moneda", "Idioma e moeda"],
-    ["ホーム通貨", "Home Currency", "主要货币", "主要貨幣", "기본 통화", "Moneda principal", "Moeda principal"],
+    ["イベントの初期通貨", "Default Event Currency", "活动默认货币", "活動預設貨幣", "이벤트 기본 통화", "Moneda predeterminada del evento", "Moeda padrão do evento"],
     ["参考換算先", "Reference Currency", "参考换算货币", "參考換算貨幣", "참고 환산 통화", "Moneda de referencia", "Moeda de referência"],
 
     [
@@ -51,13 +51,13 @@ private let appTexts: [[String]] = [
         "Em eventos no exterior é possível mostrar o total local e uma conversão aproximada."
     ],
     [
-        "ホーム通貨は新しいイベントの初期通貨です。参考換算先はホームとイベント詳細に概算額を表示するために使います。",
-        "Your home currency is the default for new events. The reference currency is used to show approximate converted totals on Home and Event Details.",
-        "主要货币是新活动的默认货币。参考货币用于在主页和活动详情中显示概算换算金额。",
-        "主要貨幣是新活動的預設貨幣。參考貨幣用於在首頁和活動詳情中顯示概算換算金額。",
-        "기본 통화는 새 이벤트의 기본 통화입니다. 참고 통화는 홈과 이벤트 상세에서 대략적인 환산 금액을 표시하는 데 사용됩니다.",
-        "La moneda principal es la predeterminada para nuevos eventos. La moneda de referencia muestra conversiones aproximadas en Inicio y en los detalles del evento.",
-        "A moeda principal é a padrão para novos eventos. A moeda de referência mostra conversões aproximadas na tela inicial e nos detalhes do evento."
+        "イベントの初期通貨は、新規イベントで最初に選ばれる通貨です。参考換算先はホームとイベント詳細に概算額を表示するために使います。",
+        "The default event currency is selected initially for new events. The reference currency shows approximate converted totals on Home and Event Details.",
+        "活动默认货币是新建活动时最初选择的货币。参考货币用于在主页和活动详情中显示概算换算金额。",
+        "活動預設貨幣是新增活動時最初選取的貨幣。參考貨幣用於在首頁和活動詳情中顯示概算換算金額。",
+        "이벤트 기본 통화는 새 이벤트에서 처음 선택되는 통화입니다. 참고 통화는 홈과 이벤트 상세에서 대략적인 환산 금액을 표시할 때 사용됩니다.",
+        "La moneda predeterminada del evento se selecciona inicialmente al crear uno. La moneda de referencia muestra conversiones aproximadas en Inicio y en los detalles.",
+        "A moeda padrão do evento é selecionada inicialmente ao criar um evento. A moeda de referência mostra conversões aproximadas na tela inicial e nos detalhes."
     ],
 
     ["ワリカンジをはじめる", "Start Warikanji", "开始使用 Warikanji", "開始使用 Warikanji", "Warikanji 시작하기", "Empezar con Warikanji", "Começar com Warikanji"],
