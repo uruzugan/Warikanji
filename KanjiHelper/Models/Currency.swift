@@ -18,9 +18,9 @@ enum AppCurrency: String, Codable, CaseIterable, Identifiable, Sendable {
     case mxn = "MXN"
 
     var id: String { rawValue }
-    var code: String { rawValue }
+    nonisolated var code: String { rawValue }
 
-    var symbol: String {
+    nonisolated var symbol: String {
         switch self {
         case .jpy: return "¥"
         case .usd: return "US$"
@@ -40,14 +40,14 @@ enum AppCurrency: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var fractionDigits: Int {
+    nonisolated var fractionDigits: Int {
         switch self {
         case .jpy, .krw: return 0
         default: return 2
         }
     }
 
-    var minorUnitScale: Int {
+    nonisolated var minorUnitScale: Int {
         fractionDigits == 0 ? 1 : 100
     }
 
@@ -222,7 +222,7 @@ enum AppCurrency: String, Codable, CaseIterable, Identifiable, Sendable {
             ?? NSDecimalNumber(decimal: value).stringValue
     }
 
-    func minorUnits(from input: String) -> Int? {
+    nonisolated func minorUnits(from input: String) -> Int? {
         var text = input
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: " ", with: "")

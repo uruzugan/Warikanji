@@ -9,7 +9,7 @@ struct ReceiptOCRResult: Identifiable, Sendable {
     var detectedCurrency: AppCurrency?
     let recognizedText: String
 
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         merchant: String?,
         amountMinorUnits: Int?,
@@ -71,7 +71,7 @@ enum ReceiptOCRService {
 
     nonisolated private static func detectMerchant(in lines: [String]) -> String? {
         let ignored = [
-            "RECEIPT", "領収", "レシート", "TOTAL", "合計", "合計", "합계", "총액",
+            "RECEIPT", "領収", "レシート", "TOTAL", "合計", "합계", "총액",
             "TEL", "PHONE", "電話", "THANK", "ありがとう", "GRACIAS", "OBRIGADO"
         ]
 
@@ -92,7 +92,7 @@ enum ReceiptOCRService {
     ) -> Int? {
         let totalWords = [
             "TOTAL", "GRAND TOTAL", "AMOUNT DUE", "BALANCE DUE", "合計", "総額", "お会計",
-            "支払額", "合计", "总计", "合計", "總計", "합계", "총액", "A PAGAR"
+            "支払額", "合计", "总计", "總計", "합계", "총액", "A PAGAR"
         ]
         let secondaryWords = ["SUBTOTAL", "小計", "TAX", "税", "CHANGE", "お釣り", "釣銭"]
         let currencyMarks = ["¥", "￥", "$", "€", "£", "₩", "฿", currency.code]

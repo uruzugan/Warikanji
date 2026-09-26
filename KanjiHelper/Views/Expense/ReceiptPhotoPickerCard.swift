@@ -367,10 +367,8 @@ struct ReceiptPhotoPickerCard: View {
                 }
             }
 
-            await MainActor.run {
-                imageData.append(contentsOf: loaded.prefix(max(0, 3 - imageData.count)))
-                pickerItems = []
-            }
+            imageData.append(contentsOf: loaded.prefix(max(0, 3 - imageData.count)))
+            pickerItems = []
         }
     }
 
