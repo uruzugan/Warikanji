@@ -93,25 +93,44 @@ enum ReceiptOCRService {
     ) -> Int? {
         let totalWords = [
             "TOTAL", "GRAND TOTAL", "AMOUNT DUE", "BALANCE DUE", "合計", "総額", "お会計",
-            "支払額", "合计", "总计", "金额合计", "總計", "金額合計", "합계", "총액", "A PAGAR"
+            "支払額", "合计", "总计", "金额合计", "金額合计", "金额合計", "金額合計",
+            "總計", "합계", "총액", "A PAGAR"
         ]
-        let subtotalWords = ["SUBTOTAL", "小計", "商品小计", "商品小計"]
+        let subtotalWords = ["SUBTOTAL", "小計", "小计", "商品小计", "商品小計"]
         let excludedWords = [
             "TAX", "税", "CHANGE", "お釣り", "釣銭", "找零",
             "TEL", "PHONE", "電話", "电话", "FAX", "热线", "熱線",
             "CASHIER", "收银员", "收銀員", "店員", "收据员", "收據員"
         ]
+
+        if let total = amountNearLabel(
+            totalWords,
+            excluding: subtotalWords,
+            in: lines,
+            currency: currency
+        ) {
+            return total
+        }
+
+        if let subtotal = amountNearLabel(
+            subtotalWords,
+            in: lines,
+            currency: currency
+        ) {
+            return subtotal
+        }
+
         let currencyMarks = ["¥", "￥", "$", "€", "£", "₩", "฿", currency.code]
         let datePattern = #"\d{1,4}[./\-年]\d{1,2}[./\-月]\d{1,4}"#
         var candidates: [(score: Int, amount: Int)] = []
 
         for (index, line) in lines.enumerated() {
             let upper = line.uppercased()
-            let isTotal = totalWords.contains(where: upper.contains)
             let isSubtotal = subtotalWords.contains(where: upper.contains)
+            let isTotal = !isSubtotal && totalWords.contains(where: upper.contains)
             let previous = index > 0 ? lines[index - 1].uppercased() : ""
-            let followsTotal = totalWords.contains(where: previous.contains)
             let followsSubtotal = subtotalWords.contains(where: previous.contains)
+            let followsTotal = !followsSubtotal && totalWords.contains(where: previous.contains)
             let looksLikeDate = line.range(of: datePattern, options: .regularExpression) != nil
             let isExcluded = excludedWords.contains(where: upper.contains)
             if !isTotal && !isSubtotal && (looksLikeDate || isExcluded) { continue }
@@ -131,6 +150,33 @@ enum ReceiptOCRService {
         return candidates.max {
             $0.score == $1.score ? $0.amount < $1.amount : $0.score < $1.score
         }?.amount
+    }
+
+    nonisolated private static func amountNearLabel(
+        _ labels: [String],
+        excluding excludedLabels: [String] = [],
+        in lines: [String],
+        currency: AppCurrency
+    ) -> Int? {
+        for index in lines.indices {
+            let labelLine = lines[index].uppercased()
+            guard labels.contains(where: labelLine.contains),
+                  !excludedLabels.contains(where: labelLine.contains) else {
+                continue
+            }
+
+            let lastIndex = min(index + 3, lines.index(before: lines.endIndex))
+            for candidateIndex in index...lastIndex {
+                let candidates = numbers(in: lines[candidateIndex], currency: currency)
+                    .filter { $0.token.filter(\.isNumber).count < 7 }
+
+                if let amount = candidates.last?.amount {
+                    return amount
+                }
+            }
+        }
+
+        return nil
     }
 
     nonisolated private static func numbers(

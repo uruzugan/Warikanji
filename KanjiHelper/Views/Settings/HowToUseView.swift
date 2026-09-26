@@ -97,10 +97,13 @@ struct HowToUseView: View {
         ),
         Guide(
             id: "receipts", symbol: "receipt.fill",
-            title: t("レシート写真", "Receipt Photos", "收据照片", "收據照片", "영수증 사진", "Fotos de recibos", "Fotos de recibos"),
-            subtitle: t("費用に写真を保存", "Attach photos to expenses", "为费用添加照片", "為費用新增照片", "비용에 사진 첨부", "Adjunta fotos a los gastos", "Anexe fotos às despesas"),
+            title: t("レシート読み取り・写真", "Receipt Scan & Photos", "收据识别与照片", "收據辨識與照片", "영수증 인식 및 사진", "Lectura y fotos de recibos", "Leitura e fotos de recibos"),
+            subtitle: t("レシートから費用を自動入力", "Fill expenses from a receipt", "从收据自动填写费用", "從收據自動填寫費用", "영수증에서 비용 자동 입력", "Rellena gastos desde un recibo", "Preencha despesas pelo recibo"),
             steps: [
-                t("費用の追加・編集画面から最大3枚まで保存できます。", "Attach up to 3 photos when adding or editing an expense.", "添加或编辑费用时最多可保存3张照片。", "新增或編輯費用時最多可儲存3張照片。", "비용 추가·편집 시 최대 3장까지 저장할 수 있습니다.", "Guarda hasta 3 fotos por gasto.", "Salve até 3 fotos por despesa."),
+                t("費用の追加・編集画面上部にある「レシートから自動入力」から、その場で撮影するか写真を選びます。", "Use Fill from Receipt at the top of the expense screen, then take a photo or choose one.", "在费用页面顶部使用“从收据自动填写”，然后拍照或选择照片。", "在費用頁面頂部使用「從收據自動填寫」，然後拍照或選擇照片。", "비용 화면 상단의 영수증 자동 입력에서 촬영하거나 사진을 선택하세요.", "Usa Rellenar desde recibo en la parte superior y haz o elige una foto.", "Use Preencher pelo recibo no topo e tire ou escolha uma foto."),
+                t("現地金額と参考換算額を表示し、イベント通貨の金額欄へ換算額を自動入力します。", "The local and reference amounts are shown, and the converted event-currency amount is filled automatically.", "会显示当地金额和参考换算金额，并自动填写活动货币金额。", "會顯示當地金額和參考換算金額，並自動填入活動貨幣金額。", "현지 금액과 참고 환산액을 표시하고 이벤트 통화 금액을 자동 입력합니다.", "Muestra el importe local y el estimado, y rellena automáticamente la moneda del evento.", "Mostra o valor local e a estimativa, preenchendo automaticamente a moeda do evento."),
+                t("読み取り・翻訳・換算結果は誤る場合があります。反映前に店名、金額、通貨、日付を確認してください。", "Scanning, translation and conversion can be inaccurate. Check the merchant, amount, currency and date before applying.", "识别、翻译和换算可能有误。应用前请确认商家、金额、货币和日期。", "辨識、翻譯和換算可能有誤。套用前請確認商家、金額、貨幣和日期。", "인식, 번역, 환산 결과는 틀릴 수 있습니다. 적용 전 가게명, 금액, 통화, 날짜를 확인하세요.", "La lectura, traducción y conversión pueden fallar. Revisa comercio, importe, moneda y fecha.", "A leitura, tradução e conversão podem falhar. Confira estabelecimento, valor, moeda e data."),
+                t("記録用の写真は下部の「添付写真」から最大3枚まで別に保存できます。", "For record keeping, attach up to 3 photos separately under Attached Photos.", "如需留存，可在下方“附加照片”中另存最多3张照片。", "如需留存，可在下方「附加照片」中另存最多3張照片。", "기록용 사진은 아래 첨부 사진에서 최대 3장까지 별도로 저장할 수 있습니다.", "Para conservarlas, adjunta hasta 3 fotos aparte en Fotos adjuntas.", "Para guardar, anexe até 3 fotos separadamente em Fotos anexadas."),
                 t("写真をタップすると拡大して確認できます。", "Tap a photo to view it larger.", "点击照片可放大查看。", "點擊照片可放大查看。", "사진을 탭하면 크게 볼 수 있습니다.", "Toca una foto para ampliarla.", "Toque em uma foto para ampliá-la.")
             ]
         ),

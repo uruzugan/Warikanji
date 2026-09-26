@@ -18,6 +18,12 @@ struct ReceiptOCRReviewView: View {
     @State private var translatedText: String?
     @State private var isTranslating = true
     @State private var translationFailed = false
+    @State private var eventConvertedAmount: Int?
+    @State private var referenceAmount: Int?
+    @State private var isConvertingEvent = false
+    @State private var isConvertingReference = false
+    @State private var eventConversionFailed = false
+    @State private var referenceConversionFailed = false
 
     init(
         result: ReceiptOCRResult,
@@ -39,13 +45,20 @@ struct ReceiptOCRReviewView: View {
     }
 
     private var language: AppLanguage { profileStore.activeLanguage }
+    private var referenceCurrency: AppCurrency { profileStore.activeReferenceCurrency }
+    private var sourceCurrency: AppCurrency { result.detectedCurrency ?? currency }
     private var amount: Int? { currency.minorUnits(from: amountText) }
     private var targetLanguage: Locale.Language {
         Locale.Language(identifier: language.localeIdentifier)
     }
     private var canApply: Bool {
-        !merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-            amount != nil || hasDate
+        !isConvertingEvent && (
+            !merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                amount != nil || hasDate
+        )
+    }
+    private var conversionKey: String {
+        "\(sourceCurrency.code)-\(currency.code)-\(referenceCurrency.code)-\(result.amountMinorUnits ?? 0)"
     }
 
     var body: some View {
@@ -78,6 +91,9 @@ struct ReceiptOCRReviewView: View {
         .translationTask(source: nil, target: targetLanguage) { session in
             await translateRecognizedText(using: session)
         }
+        .task(id: conversionKey) {
+            await loadConvertedAmounts()
+        }
     }
 
     private var warningCard: some View {
@@ -86,13 +102,13 @@ struct ReceiptOCRReviewView: View {
                 .foregroundStyle(AppTheme.warning)
 
             Text(text(
-                ja: "写真から読み取った内容には誤りが含まれる場合があります。費用へ反映する前に必ず確認してください。",
-                en: "Scanned information may contain errors. Always check it before applying it to the expense.",
-                zhHans: "从照片识别的内容可能有误。应用到费用前请务必确认。",
-                zhHant: "從照片辨識的內容可能有誤。套用到費用前請務必確認。",
-                ko: "사진에서 인식한 내용에는 오류가 있을 수 있습니다. 비용에 적용하기 전에 반드시 확인하세요.",
-                es: "La información leída puede contener errores. Revísala antes de aplicarla al gasto.",
-                pt: "As informações lidas podem conter erros. Confira antes de aplicá-las à despesa."
+                ja: "読み取り結果と参考換算額は誤る場合があります。費用へ反映する前に金額と通貨を確認してください。",
+                en: "Scan results and estimated conversions may be inaccurate. Check the amount and currency before applying them.",
+                zhHans: "识别结果和参考换算金额可能有误。应用前请确认金额和货币。",
+                zhHant: "辨識結果和參考換算金額可能有誤。套用前請確認金額和貨幣。",
+                ko: "인식 결과와 참고 환산액은 틀릴 수 있습니다. 적용하기 전에 금액과 통화를 확인하세요.",
+                es: "La lectura y la conversión estimada pueden contener errores. Comprueba el importe y la moneda.",
+                pt: "A leitura e a conversão estimada podem conter erros. Confira o valor e a moeda."
             ))
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -149,47 +165,150 @@ struct ReceiptOCRReviewView: View {
 
     @ViewBuilder
     private var currencyCard: some View {
-        if let detected = result.detectedCurrency {
-            VStack(alignment: .leading, spacing: 8) {
-                Label(
-                    text(
-                        ja: "検出した通貨：", en: "Detected currency: ",
-                        zhHans: "检测到的货币：", zhHant: "偵測到的貨幣：",
-                        ko: "감지된 통화: ", es: "Moneda detectada: ", pt: "Moeda detectada: "
-                    ) + detected.code,
-                    systemImage: "banknote"
+        if let scannedAmount = result.amountMinorUnits {
+            VStack(alignment: .leading, spacing: 12) {
+                Label(text(
+                    ja: "金額と参考換算", en: "Amount & Estimate",
+                    zhHans: "金额与参考换算", zhHant: "金額與參考換算",
+                    ko: "금액 및 참고 환산", es: "Importe y conversión", pt: "Valor e conversão"
+                ), systemImage: "arrow.left.arrow.right")
+                .font(.headline)
+
+                amountRow(
+                    label: text(
+                        ja: "現地金額", en: "Local amount",
+                        zhHans: "当地金额", zhHant: "當地金額",
+                        ko: "현지 금액", es: "Importe local", pt: "Valor local"
+                    ),
+                    value: "\(sourceCurrency.code)  \(sourceCurrency.formatted(minorUnits: scannedAmount))"
                 )
-                .font(.subheadline.bold())
 
-                if detected != currency {
-                    if let scannedAmount = result.amountMinorUnits {
-                        Text(text(
-                            ja: "読み取った金額：\(detected.formatted(minorUnits: scannedAmount))",
-                            en: "Scanned amount: \(detected.formatted(minorUnits: scannedAmount))",
-                            zhHans: "识别金额：\(detected.formatted(minorUnits: scannedAmount))",
-                            zhHant: "辨識金額：\(detected.formatted(minorUnits: scannedAmount))",
-                            ko: "인식한 금액: \(detected.formatted(minorUnits: scannedAmount))",
-                            es: "Importe leído: \(detected.formatted(minorUnits: scannedAmount))",
-                            pt: "Valor lido: \(detected.formatted(minorUnits: scannedAmount))"
-                        ))
-                        .font(.subheadline.bold())
-                    }
+                referenceAmountRow
 
-                    Text(text(
-                        ja: "イベント通貨は\(currency.code)です。誤った通貨で保存しないよう、金額は自動入力していません。\(currency.code)への換算額を入力するか、イベント通貨を確認してください。",
-                        en: "The event uses \(currency.code). To prevent saving the wrong currency, the amount was not filled in. Enter the converted \(currency.code) amount or check the event currency.",
-                        zhHans: "活动货币为\(currency.code)。为避免以错误货币保存，金额未自动填写。请输入换算后的\(currency.code)金额，或检查活动货币。",
-                        zhHant: "活動貨幣為\(currency.code)。為避免以錯誤貨幣儲存，金額未自動填入。請輸入換算後的\(currency.code)金額，或確認活動貨幣。",
-                        ko: "이벤트 통화는 \(currency.code)입니다. 잘못된 통화로 저장하지 않도록 금액을 자동 입력하지 않았습니다. \(currency.code) 환산 금액을 입력하거나 이벤트 통화를 확인하세요.",
-                        es: "El evento usa \(currency.code). Para evitar guardar una moneda incorrecta, el importe no se rellenó. Introduce el valor convertido a \(currency.code) o revisa la moneda del evento.",
-                        pt: "O evento usa \(currency.code). Para evitar salvar na moeda errada, o valor não foi preenchido. Digite o valor convertido para \(currency.code) ou confira a moeda do evento."
-                    ))
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.warning)
+                if sourceCurrency != currency && currency != referenceCurrency {
+                    eventAmountRow
+                }
+
+                Text(text(
+                    ja: "換算額は最新の取得レートによる目安です。イベント通貨（\(currency.code)）の金額欄へ自動入力します。",
+                    en: "The conversion is an estimate based on the latest available rate. It is filled into the event currency (\(currency.code)) automatically.",
+                    zhHans: "换算金额仅供参考，并会自动填写为活动货币（\(currency.code)）。",
+                    zhHant: "換算金額僅供參考，並會自動填入活動貨幣（\(currency.code)）。",
+                    ko: "환산액은 참고값이며 이벤트 통화(\(currency.code)) 금액란에 자동 입력됩니다.",
+                    es: "La conversión es orientativa y se introduce automáticamente en la moneda del evento (\(currency.code)).",
+                    pt: "A conversão é uma estimativa e é preenchida automaticamente na moeda do evento (\(currency.code))."
+                ))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                if sourceCurrency != currency || sourceCurrency != referenceCurrency {
+                    Link(
+                        "Rates By Exchange Rate API",
+                        destination: URL(string: "https://www.exchangerate-api.com")!
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .appCard()
+        }
+    }
+
+    private func amountRow(label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+        }
+        .font(.subheadline)
+    }
+
+    @ViewBuilder
+    private var referenceAmountRow: some View {
+        if isConvertingReference {
+            conversionProgressRow(label: text(
+                ja: "参考換算額", en: "Reference estimate",
+                zhHans: "参考换算金额", zhHant: "參考換算金額",
+                ko: "참고 환산액", es: "Conversión de referencia", pt: "Conversão de referência"
+            ))
+        } else if let referenceAmount {
+            amountRow(
+                label: text(
+                    ja: "参考換算額", en: "Reference estimate",
+                    zhHans: "参考换算金额", zhHant: "參考換算金額",
+                    ko: "참고 환산액", es: "Conversión de referencia", pt: "Conversão de referência"
+                ),
+                value: "≈ \(referenceCurrency.code)  \(referenceCurrency.formatted(minorUnits: referenceAmount))"
+            )
+        } else if referenceConversionFailed {
+            conversionFailureRow { Task { await loadConvertedAmounts() } }
+        }
+    }
+
+    @ViewBuilder
+    private var eventAmountRow: some View {
+        if isConvertingEvent {
+            conversionProgressRow(label: text(
+                ja: "イベント通貨", en: "Event currency",
+                zhHans: "活动货币", zhHant: "活動貨幣",
+                ko: "이벤트 통화", es: "Moneda del evento", pt: "Moeda do evento"
+            ))
+        } else if let eventConvertedAmount {
+            amountRow(
+                label: text(
+                    ja: "イベント通貨", en: "Event currency",
+                    zhHans: "活动货币", zhHant: "活動貨幣",
+                    ko: "이벤트 통화", es: "Moneda del evento", pt: "Moeda do evento"
+                ),
+                value: "≈ \(currency.code)  \(currency.formatted(minorUnits: eventConvertedAmount))"
+            )
+        } else if eventConversionFailed {
+            conversionFailureRow { Task { await loadConvertedAmounts() } }
+        }
+    }
+
+    private func conversionProgressRow(label: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Spacer()
+            ProgressView()
+                .controlSize(.small)
+            Text(text(
+                ja: "換算中…", en: "Converting…",
+                zhHans: "换算中…", zhHant: "換算中…",
+                ko: "환산 중…", es: "Convirtiendo…", pt: "Convertendo…"
+            ))
+            .foregroundStyle(.secondary)
+        }
+        .font(.subheadline)
+    }
+
+    private func conversionFailureRow(retry: @escaping () -> Void) -> some View {
+        HStack {
+            Text(text(
+                ja: "換算できませんでした", en: "Conversion unavailable",
+                zhHans: "无法换算", zhHant: "無法換算",
+                ko: "환산할 수 없음", es: "Conversión no disponible", pt: "Conversão indisponível"
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button(action: retry) {
+                Label(text(
+                    ja: "再試行", en: "Retry",
+                    zhHans: "重试", zhHant: "重試",
+                    ko: "다시 시도", es: "Reintentar", pt: "Tentar novamente"
+                ), systemImage: "arrow.clockwise")
+                .font(.caption.bold())
+            }
+            .buttonStyle(.borderless)
         }
     }
 
@@ -303,6 +422,58 @@ struct ReceiptOCRReviewView: View {
         }
 
         isTranslating = false
+    }
+
+    @MainActor
+    private func loadConvertedAmounts() async {
+        guard let scannedAmount = result.amountMinorUnits else { return }
+
+        eventConvertedAmount = nil
+        referenceAmount = nil
+        eventConversionFailed = false
+        referenceConversionFailed = false
+        isConvertingEvent = sourceCurrency != currency
+        isConvertingReference = sourceCurrency != referenceCurrency
+
+        if sourceCurrency == currency {
+            eventConvertedAmount = scannedAmount
+            if amountText.isEmpty {
+                amountText = currency.inputText(minorUnits: scannedAmount)
+            }
+        } else {
+            do {
+                let converted = try await ExchangeRateService.shared.convert(
+                    minorUnits: scannedAmount,
+                    from: sourceCurrency,
+                    to: currency
+                )
+                eventConvertedAmount = converted
+                if amountText.isEmpty {
+                    amountText = currency.inputText(minorUnits: converted)
+                }
+            } catch {
+                eventConversionFailed = true
+            }
+            isConvertingEvent = false
+        }
+
+        if sourceCurrency == referenceCurrency {
+            referenceAmount = scannedAmount
+        } else if referenceCurrency == currency {
+            referenceAmount = eventConvertedAmount
+            referenceConversionFailed = eventConversionFailed
+        } else {
+            do {
+                referenceAmount = try await ExchangeRateService.shared.convert(
+                    minorUnits: scannedAmount,
+                    from: sourceCurrency,
+                    to: referenceCurrency
+                )
+            } catch {
+                referenceConversionFailed = true
+            }
+        }
+        isConvertingReference = false
     }
 
     private var recognizedLanguageMatchesAppLanguage: Bool {
