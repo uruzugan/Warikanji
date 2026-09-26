@@ -1,6 +1,6 @@
 import Foundation
 
-enum AppCurrency: String, Codable, CaseIterable, Identifiable {
+enum AppCurrency: String, Codable, CaseIterable, Identifiable, Sendable {
     case jpy = "JPY"
     case usd = "USD"
     case eur = "EUR"

@@ -122,7 +122,11 @@ struct ExpenseCreateView: View {
 
                     SettlementRoundingPicker(rounding: $rounding, currency: currency)
 
-                    ReceiptPhotoPickerCard(imageData: $receiptImageData)
+                    ReceiptPhotoPickerCard(
+                        imageData: $receiptImageData,
+                        currency: currency,
+                        onApplyOCR: applyOCR
+                    )
                         .environmentObject(profileStore)
 
                     saveButton
@@ -264,6 +268,19 @@ struct ExpenseCreateView: View {
             )
         }
         fixedIds = []
+    }
+
+    private func applyOCR(_ result: ReceiptOCRResult) {
+        if let merchant = result.merchant {
+            title = merchant
+        }
+        if let amount = result.amountMinorUnits {
+            amountText = currency.inputText(minorUnits: amount)
+        }
+        if let date = result.date {
+            hasExpenseDate = true
+            expenseDate = date
+        }
     }
 
     private func save() {

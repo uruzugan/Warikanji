@@ -139,7 +139,11 @@ struct ExpenseEditView: View {
 
                     SettlementRoundingPicker(rounding: $rounding, currency: currency)
 
-                    ReceiptPhotoPickerCard(imageData: $receiptImageData)
+                    ReceiptPhotoPickerCard(
+                        imageData: $receiptImageData,
+                        currency: currency,
+                        onApplyOCR: applyOCR
+                    )
                         .environmentObject(profileStore)
 
                     conditionCard
@@ -303,6 +307,19 @@ struct ExpenseEditView: View {
         viewModel.updateExpense(updated, in: eventId)
         ReceiptImageStorage.shared.delete(oldFiles)
         dismiss()
+    }
+
+    private func applyOCR(_ result: ReceiptOCRResult) {
+        if let merchant = result.merchant {
+            title = merchant
+        }
+        if let amount = result.amountMinorUnits {
+            amountText = currency.inputText(minorUnits: amount)
+        }
+        if let date = result.date {
+            hasExpenseDate = true
+            expenseDate = date
+        }
     }
 
     private func dismissKeyboard() {
