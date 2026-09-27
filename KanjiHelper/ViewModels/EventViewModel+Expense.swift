@@ -2,23 +2,31 @@ import Foundation
 import SwiftUI
 
 extension EventViewModel {
-    func addExpense(_ expense: Expense, to eventId: UUID) {
+    @discardableResult
+    func addExpense(_ expense: Expense, to eventId: UUID) -> Bool {
         guard canEdit(eventId),
-              let index = indexOfEvent(eventId) else { return }
+              let index = indexOfEvent(eventId) else { return false }
 
+        let previousEvent = events[index]
         var expense = expense
         prepareRandomOrder(for: &expense, participants: events[index].participants)
 
         events[index].expenses.append(expense)
         events[index].transfers = []
-        saveEvents()
+        guard saveEvents() else {
+            events[index] = previousEvent
+            return false
+        }
+        return true
     }
 
-    func updateExpense(_ expense: Expense, in eventId: UUID) {
+    @discardableResult
+    func updateExpense(_ expense: Expense, in eventId: UUID) -> Bool {
         guard canEdit(eventId),
               let eventIndex = indexOfEvent(eventId),
-              let expenseIndex = indexOfExpense(expense.id, in: eventIndex) else { return }
+              let expenseIndex = indexOfExpense(expense.id, in: eventIndex) else { return false }
 
+        let previousEvent = events[eventIndex]
         let old = events[eventIndex].expenses[expenseIndex]
         var updated = expense
 
@@ -39,7 +47,11 @@ extension EventViewModel {
             events[eventIndex].transfers = []
         }
 
-        saveEvents()
+        guard saveEvents() else {
+            events[eventIndex] = previousEvent
+            return false
+        }
+        return true
     }
 
     func updateExpenseConditions(
@@ -52,6 +64,7 @@ extension EventViewModel {
               let eventIndex = indexOfEvent(eventId),
               let expenseIndex = indexOfExpense(expenseId, in: eventIndex) else { return }
 
+        let previousEvent = events[eventIndex]
         var expense = events[eventIndex].expenses[expenseIndex]
 
         let changed =
@@ -72,7 +85,9 @@ extension EventViewModel {
             events[eventIndex].transfers = []
         }
 
-        saveEvents()
+        if !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 
     func deleteExpense(expenseId: UUID, from eventId: UUID) {
@@ -82,10 +97,16 @@ extension EventViewModel {
 
         let expense = events[eventIndex].expenses[expenseIndex]
 
-        ReceiptImageStorage.shared.delete(expense.receiptImages)
+        let previousEvent = events[eventIndex]
         events[eventIndex].expenses.remove(at: expenseIndex)
         events[eventIndex].transfers = []
-        saveEvents()
+
+        guard saveEvents() else {
+            events[eventIndex] = previousEvent
+            return
+        }
+
+        ReceiptImageStorage.shared.delete(expense.receiptImages)
     }
 
     func deleteExpenses(at offsets: IndexSet, from eventId: UUID) {
@@ -100,13 +121,18 @@ extension EventViewModel {
             events[eventIndex].expenses[$0]
         }
 
+        let previousEvent = events[eventIndex]
+        events[eventIndex].expenses.remove(atOffsets: validOffsets)
+        events[eventIndex].transfers = []
+
+        guard saveEvents() else {
+            events[eventIndex] = previousEvent
+            return
+        }
+
         deletingExpenses.forEach {
             ReceiptImageStorage.shared.delete($0.receiptImages)
         }
-
-        events[eventIndex].expenses.remove(atOffsets: validOffsets)
-        events[eventIndex].transfers = []
-        saveEvents()
     }
 
     func expense(for expenseId: UUID, in eventId: UUID) -> Expense? {

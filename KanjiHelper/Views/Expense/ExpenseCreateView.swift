@@ -290,8 +290,15 @@ struct ExpenseCreateView: View {
 
         saveNames()
 
-        let receiptFileNames = receiptImageData.compactMap {
-            try? ReceiptImageStorage.shared.save($0)
+        var receiptFileNames: [String] = []
+
+        for data in receiptImageData {
+            do {
+                receiptFileNames.append(try ReceiptImageStorage.shared.save(data))
+            } catch {
+                ReceiptImageStorage.shared.delete(receiptFileNames)
+                return
+            }
         }
 
         let expense = Expense(
@@ -307,8 +314,11 @@ struct ExpenseCreateView: View {
             date: hasExpenseDate ? expenseDate : nil
         )
 
-        viewModel.addExpense(expense, to: eventId)
-        dismiss()
+        if viewModel.addExpense(expense, to: eventId) {
+            dismiss()
+        } else {
+            ReceiptImageStorage.shared.delete(receiptFileNames)
+        }
     }
 
     private func saveNames() {

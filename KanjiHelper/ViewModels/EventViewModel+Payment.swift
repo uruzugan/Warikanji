@@ -36,8 +36,11 @@ extension EventViewModel {
 
     func updateTransfers(_ transfers: [Transfer], for eventId: UUID) {
         guard canEdit(eventId), let index = indexOfEvent(eventId) else { return }
+        let previousEvent = events[index]
         events[index].transfers = transfers
-        saveEvents()
+        if !saveEvents() {
+            events[index] = previousEvent
+        }
     }
 
     func setTransferPaid(transferId: UUID, isPaid: Bool, in eventId: UUID) {
@@ -45,7 +48,10 @@ extension EventViewModel {
               let transferIndex = events[eventIndex].transfers.firstIndex(where: { $0.id == transferId })
         else { return }
 
+        let previousEvent = events[eventIndex]
         events[eventIndex].transfers[transferIndex].isPaid = isPaid
-        saveEvents()
+        if !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 }

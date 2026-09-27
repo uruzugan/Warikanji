@@ -17,15 +17,16 @@ final class EventLifecycleStore: ObservableObject {
     private let key = "eventLifecycleStates"
 
     private init() {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let saved = try? JSONDecoder().decode(
+        guard let data = UserDefaults.standard.data(forKey: key) else { return }
+
+        do {
+            states = try JSONDecoder().decode(
                 [String: EventLifecycleState].self,
                 from: data
-              ) else {
-            return
+            )
+        } catch {
+            AppStorageIssueReporter.report(.load)
         }
-
-        states = saved
     }
 
     func state(for eventId: UUID) -> EventLifecycleState {
@@ -70,8 +71,24 @@ final class EventLifecycleStore: ObservableObject {
         save()
     }
 
+    var snapshot: [String: EventLifecycleState] {
+        states
+    }
+
+    func replace(with restoredStates: [String: EventLifecycleState]) {
+        states = restoredStates
+        save()
+    }
+
     private func save() {
-        guard let data = try? JSONEncoder().encode(states) else { return }
+        let data: Data
+
+        do {
+            data = try JSONEncoder().encode(states)
+        } catch {
+            AppStorageIssueReporter.report(.save)
+            return
+        }
         UserDefaults.standard.set(data, forKey: key)
     }
 }

@@ -1,5 +1,50 @@
 import Foundation
 
+enum AppStorageOperation: String, Identifiable {
+    case save
+    case load
+    case delete
+
+    var id: String { rawValue }
+}
+
+extension Notification.Name {
+    static let appStorageFailure = Notification.Name("appStorageFailure")
+}
+
+enum AppStorageIssueReporter {
+    private static let lock = NSLock()
+    private static var pendingOperation: AppStorageOperation?
+
+    static func report(_ operation: AppStorageOperation) {
+        lock.lock()
+        pendingOperation = operation
+        lock.unlock()
+
+        let notify = {
+            NotificationCenter.default.post(
+                name: .appStorageFailure,
+                object: operation
+            )
+        }
+
+        if Thread.isMainThread {
+            notify()
+        } else {
+            DispatchQueue.main.async(execute: notify)
+        }
+    }
+
+    static func takePendingOperation() -> AppStorageOperation? {
+        lock.lock()
+        defer {
+            pendingOperation = nil
+            lock.unlock()
+        }
+        return pendingOperation
+    }
+}
+
 final class JSONStorageService {
     static let shared = JSONStorageService()
 
@@ -15,12 +60,15 @@ final class JSONStorageService {
         decoder.dateDecodingStrategy = .iso8601
     }
 
-    func save<T: Encodable>(_ value: T, filename: String) {
+    @discardableResult
+    func save<T: Encodable>(_ value: T, filename: String) -> Bool {
         do {
             let data = try encoder.encode(value)
             try data.write(to: fileURL(for: filename), options: .atomic)
+            return true
         } catch {
-            print("保存エラー: \(error)")
+            AppStorageIssueReporter.report(.save)
+            return false
         }
     }
 
@@ -37,22 +85,25 @@ final class JSONStorageService {
                 from: Data(contentsOf: url)
             )
         } catch {
-            print("読み込みエラー: \(error)")
+            AppStorageIssueReporter.report(.load)
             return nil
         }
     }
 
-    func delete(filename: String) {
+    @discardableResult
+    func delete(filename: String) -> Bool {
         let url = fileURL(for: filename)
 
         guard FileManager.default.fileExists(atPath: url.path) else {
-            return
+            return true
         }
 
         do {
             try FileManager.default.removeItem(at: url)
+            return true
         } catch {
-            print("削除エラー: \(error)")
+            AppStorageIssueReporter.report(.delete)
+            return false
         }
     }
 

@@ -125,10 +125,6 @@ struct Event: Identifiable, Codable, Equatable {
         expenses.isEmpty
     }
 
-    var settlementStatusText: String {
-        settlementStatusText(for: .japanese)
-    }
-
     func settlementStatusText(for language: AppLanguage) -> String {
         if transfers.isEmpty {
             return expenses.isEmpty
@@ -155,10 +151,6 @@ struct Event: Identifiable, Codable, Equatable {
                 zhHans: "结算中", zhHant: "結算中",
                 ko: "정산 중", es: "En proceso", pt: "Em andamento"
             )
-    }
-
-    func displayName(for participantId: UUID) -> String {
-        displayName(for: participantId, language: .japanese)
     }
 
     func displayName(for participantId: UUID, language: AppLanguage) -> String {

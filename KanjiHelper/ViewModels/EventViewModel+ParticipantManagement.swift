@@ -10,6 +10,7 @@ extension EventViewModel {
     func saveParticipantNames(_ names: [UUID: String], in eventId: UUID) {
         guard canEdit(eventId), let eventIndex = indexOfEvent(eventId) else { return }
 
+        let previousEvent = events[eventIndex]
         var changed = false
 
         for i in events[eventIndex].participants.indices {
@@ -23,7 +24,9 @@ extension EventViewModel {
             changed = true
         }
 
-        if changed { saveEvents() }
+        if changed, !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 
     func participantRemovalIssue(participantId: UUID, from eventId: UUID) -> ParticipantRemovalIssue? {
@@ -58,6 +61,7 @@ extension EventViewModel {
               let participantIndex = events[eventIndex].participants.firstIndex(where: { $0.id == participantId })
         else { return false }
 
+        let previousEvent = events[eventIndex]
         events[eventIndex].participants.remove(at: participantIndex)
 
         for i in events[eventIndex].expenses.indices {
@@ -69,7 +73,10 @@ extension EventViewModel {
         events[eventIndex].transfers = []
 
         prepareRandomOrders(at: eventIndex)
-        saveEvents()
+        guard saveEvents() else {
+            events[eventIndex] = previousEvent
+            return false
+        }
         return true
     }
 

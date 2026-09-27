@@ -94,8 +94,9 @@ struct EventCreateView: View {
             expectedParticipantCount: participantCount
         )
 
-        viewModel.addEvent(event)
-        dismiss()
+        if viewModel.addEvent(event) {
+            dismiss()
+        }
     }
 }
 

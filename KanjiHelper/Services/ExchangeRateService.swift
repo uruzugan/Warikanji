@@ -4,7 +4,7 @@ import Foundation
 final class ExchangeRateService {
     static let shared = ExchangeRateService()
 
-    private struct Cache {
+    private struct Cache: Codable {
         let rates: [String: Decimal]
         let expiresAt: Date
     }
@@ -21,8 +21,19 @@ final class ExchangeRateService {
     }
 
     private var cache: [AppCurrency: Cache] = [:]
+    private let cacheKey = "exchangeRateCache"
 
-    private init() {}
+    private init() {
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let saved = try? JSONDecoder().decode([String: Cache].self, from: data) else {
+            return
+        }
+
+        cache = saved.reduce(into: [:]) { result, item in
+            guard let currency = AppCurrency(rawValue: item.key) else { return }
+            result[currency] = item.value
+        }
+    }
 
     func convert(minorUnits: Int, from: AppCurrency, to: AppCurrency) async throws -> Int {
         guard from != to else { return minorUnits }
@@ -54,6 +65,19 @@ final class ExchangeRateService {
             return cached.rates
         }
 
+        let staleRates = cache[currency]?.rates
+
+        do {
+            return try await fetchRates(for: currency)
+        } catch {
+            if let staleRates {
+                return staleRates
+            }
+            throw error
+        }
+    }
+
+    private func fetchRates(for currency: AppCurrency) async throws -> [String: Decimal] {
         guard let url = URL(string: "https://open.er-api.com/v6/latest/\(currency.code)") else {
             throw ExchangeRateError.invalidURL
         }
@@ -77,7 +101,17 @@ final class ExchangeRateService {
             : Date().addingTimeInterval(60 * 60 * 24)
 
         cache[currency] = Cache(rates: decoded.rates, expiresAt: expiresAt)
+        persistCache()
         return decoded.rates
+    }
+
+    private func persistCache() {
+        let saved = cache.reduce(into: [String: Cache]()) { result, item in
+            result[item.key.rawValue] = item.value
+        }
+
+        guard let data = try? JSONEncoder().encode(saved) else { return }
+        UserDefaults.standard.set(data, forKey: cacheKey)
     }
 }
 

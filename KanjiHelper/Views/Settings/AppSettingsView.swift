@@ -1,7 +1,9 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct AppSettingsView: View {
     @EnvironmentObject private var profileStore: ProfileStore
+    @EnvironmentObject private var eventViewModel: EventViewModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
@@ -11,6 +13,12 @@ struct AppSettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var showSaved = false
     @State private var hasLoaded = false
+    @State private var backupDocument: WarikanjiBackupDocument?
+    @State private var pendingRestoreData: Data?
+    @State private var isExportingBackup = false
+    @State private var isImportingBackup = false
+    @State private var showRestoreConfirmation = false
+    @State private var backupStatus: BackupStatus?
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -27,6 +35,7 @@ struct AppSettingsView: View {
                     brandCard
                     accountCard
                     generalCard
+                    backupCard
                     helpCard
                     switchAccountCard
                     deleteAccountCard
@@ -40,8 +49,9 @@ struct AppSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(language.t(.done)) {
-                        save(showConfirmation: false)
-                        dismiss()
+                        if save(showConfirmation: false) {
+                            dismiss()
+                        }
                     }
                     .disabled(trimmedName.isEmpty)
                 }
@@ -49,6 +59,64 @@ struct AppSettingsView: View {
             .onAppear { loadIfNeeded() }
             .alert(language.t(.settingsSaved), isPresented: $showSaved) {
                 Button("OK", role: .cancel) {}
+            }
+            .alert(backupStatusTitle, isPresented: Binding(
+                get: { backupStatus != nil },
+                set: { if !$0 { backupStatus = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(backupStatusMessage)
+            }
+            .fileExporter(
+                isPresented: $isExportingBackup,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: backupFileName
+            ) { result in
+                if case .success = result {
+                    backupStatus = .exported
+                } else {
+                    backupStatus = .exportFailed
+                }
+                backupDocument = nil
+            }
+            .fileImporter(
+                isPresented: $isImportingBackup,
+                allowedContentTypes: [.json]
+            ) { result in
+                prepareRestore(from: result)
+            }
+            .confirmationDialog(
+                t(
+                    "バックアップから復元しますか？", "Restore from this backup?",
+                    "要从此备份恢复吗？", "要從此備份還原嗎？",
+                    "이 백업에서 복원하시겠습니까?", "¿Restaurar desde esta copia?",
+                    "Restaurar deste backup?"
+                ),
+                isPresented: $showRestoreConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(
+                    t("復元する", "Restore", "恢复", "還原", "복원", "Restaurar", "Restaurar"),
+                    role: .destructive,
+                    action: restoreBackup
+                )
+                Button(language.t(.cancel), role: .cancel) {
+                    pendingRestoreData = nil
+                }
+            } message: {
+                Text(
+                    t(
+                        "端末内のアカウント、イベント、費用、精算状況、レシート画像をバックアップの内容で置き換えます。",
+                        "Accounts, events, expenses, settlement status and receipt images on this device will be replaced with the backup.",
+                        "本设备上的账户、活动、费用、结算状态和收据图片将被备份内容替换。",
+                        "本裝置上的帳戶、活動、費用、結算狀態和收據圖片將由備份內容取代。",
+                        "이 기기의 계정, 이벤트, 비용, 정산 상태 및 영수증 이미지가 백업 내용으로 교체됩니다.",
+                        "Las cuentas, eventos, gastos, liquidaciones e imágenes de recibos del dispositivo se sustituirán por la copia.",
+                        "As contas, eventos, despesas, acertos e imagens de recibos do dispositivo serão substituídos pelo backup."
+                    )
+                )
             }
             .confirmationDialog(
                 t("このアカウントを削除しますか？", "Delete this account?", "删除此账户？", "刪除此帳戶？", "이 계정을 삭제하시겠습니까?", "¿Eliminar esta cuenta?", "Excluir esta conta?"),
@@ -240,6 +308,68 @@ struct AppSettingsView: View {
         .appCard()
     }
 
+    private var backupCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            cardTitle(
+                t(
+                    "バックアップと復元", "Backup & Restore",
+                    "备份与恢复", "備份與還原", "백업 및 복원",
+                    "Copia y restauración", "Backup e restauração"
+                ),
+                symbol: "externaldrive.fill"
+            )
+
+            Text(
+                t(
+                    "すべてのローカルアカウントとレシート画像を1つのファイルに保存します。保存先を選ぶまで端末外には送信されません。",
+                    "Save every local account and receipt image in one file. Nothing leaves your device until you choose where to save it.",
+                    "将所有本地账户和收据图片保存为一个文件。在您选择保存位置之前，数据不会离开设备。",
+                    "將所有本機帳戶和收據圖片儲存為一個檔案。在您選擇儲存位置之前，資料不會離開裝置。",
+                    "모든 로컬 계정과 영수증 이미지를 하나의 파일에 저장합니다. 저장 위치를 선택하기 전에는 기기 밖으로 전송되지 않습니다.",
+                    "Guarda todas las cuentas locales y los recibos en un archivo. Nada sale del dispositivo hasta que eliges dónde guardarlo.",
+                    "Salve todas as contas locais e imagens de recibos em um arquivo. Nada sai do dispositivo até você escolher onde salvar."
+                )
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Button(action: exportBackup) {
+                Label(
+                    t(
+                        "バックアップを書き出す", "Export Backup",
+                        "导出备份", "匯出備份", "백업 내보내기",
+                        "Exportar copia", "Exportar backup"
+                    ),
+                    systemImage: "square.and.arrow.up"
+                )
+                .font(.subheadline.bold())
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 11)
+                .background(AppTheme.primary.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                isImportingBackup = true
+            } label: {
+                Label(
+                    t(
+                        "バックアップから復元", "Restore Backup",
+                        "从备份恢复", "從備份還原", "백업에서 복원",
+                        "Restaurar copia", "Restaurar backup"
+                    ),
+                    systemImage: "square.and.arrow.down"
+                )
+                .font(.subheadline.bold())
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 11)
+            }
+            .buttonStyle(.bordered)
+        }
+        .appCard()
+    }
+
     private var switchAccountCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardTitle(language.t(.account), symbol: "person.2.circle.fill")
@@ -249,9 +379,10 @@ struct AppSettingsView: View {
                 .foregroundStyle(.secondary)
 
             Button {
-                save(showConfirmation: false)
-                profileStore.leaveCurrentProfile()
-                dismiss()
+                if save(showConfirmation: false) {
+                    profileStore.leaveCurrentProfile()
+                    dismiss()
+                }
             } label: {
                 Label(language.t(.switchAccount), systemImage: "arrow.triangle.2.circlepath")
                     .font(.subheadline.bold())
@@ -368,26 +499,141 @@ struct AppSettingsView: View {
         hasLoaded = true
     }
 
-    private func save(showConfirmation: Bool = true) {
-        guard !trimmedName.isEmpty else { return }
+    @discardableResult
+    private func save(showConfirmation: Bool = true) -> Bool {
+        guard !trimmedName.isEmpty else { return false }
 
-        profileStore.renameActiveProfile(to: trimmedName)
-        profileStore.updateActivePreferences(
+        let saved = profileStore.updateActiveSettings(
+            name: trimmedName,
             language: language,
             homeCurrency: homeCurrency,
             referenceCurrency: referenceCurrency
         )
 
-        if showConfirmation {
+        if saved, showConfirmation {
             showSaved = true
+        }
+        return saved
+    }
+
+    private func exportBackup() {
+        do {
+            backupDocument = WarikanjiBackupDocument(
+                data: try profileStore.exportBackupData()
+            )
+            isExportingBackup = true
+        } catch {
+            backupStatus = .exportFailed
+        }
+    }
+
+    private func prepareRestore(from result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessed { url.stopAccessingSecurityScopedResource() }
+            }
+
+            let data = try Data(contentsOf: url)
+            _ = try BackupService.shared.decode(data)
+            pendingRestoreData = data
+            showRestoreConfirmation = true
+        } catch {
+            backupStatus = .restoreFailed
+        }
+    }
+
+    private func restoreBackup() {
+        guard let pendingRestoreData else { return }
+
+        do {
+            try profileStore.restoreBackupData(pendingRestoreData)
+
+            if let activeProfileId = profileStore.activeProfileId {
+                eventViewModel.switchProfile(to: activeProfileId)
+            } else {
+                eventViewModel.unloadProfile()
+            }
+
+            hasLoaded = false
+            loadIfNeeded()
+            backupStatus = .restored
+        } catch {
+            backupStatus = .restoreFailed
+        }
+
+        self.pendingRestoreData = nil
+    }
+
+    private var backupFileName: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return "Warikanji-Backup-\(formatter.string(from: Date()))"
+    }
+
+    private var backupStatusTitle: String {
+        switch backupStatus {
+        case .exported:
+            return t(
+                "バックアップ完了", "Backup Complete", "备份完成", "備份完成",
+                "백업 완료", "Copia completada", "Backup concluído"
+            )
+        case .restored:
+            return t(
+                "復元完了", "Restore Complete", "恢复完成", "還原完成",
+                "복원 완료", "Restauración completada", "Restauração concluída"
+            )
+        case .exportFailed, .restoreFailed, nil:
+            return t(
+                "処理できませんでした", "Could Not Complete",
+                "无法完成操作", "無法完成操作", "작업을 완료하지 못했습니다",
+                "No se pudo completar", "Não foi possível concluir"
+            )
+        }
+    }
+
+    private var backupStatusMessage: String {
+        switch backupStatus {
+        case .exported:
+            return t(
+                "バックアップファイルを保存しました。", "The backup file was saved.",
+                "备份文件已保存。", "備份檔案已儲存。", "백업 파일을 저장했습니다.",
+                "Se guardó el archivo de copia.", "O arquivo de backup foi salvo."
+            )
+        case .restored:
+            return t(
+                "バックアップの内容を復元しました。", "The backup was restored.",
+                "备份内容已恢复。", "備份內容已還原。", "백업 내용을 복원했습니다.",
+                "Se restauró la copia de seguridad.", "O backup foi restaurado."
+            )
+        case .exportFailed:
+            return t(
+                "バックアップを作成または保存できませんでした。もう一度お試しください。",
+                "The backup could not be created or saved. Please try again.",
+                "无法创建或保存备份。请重试。", "無法建立或儲存備份。請再試一次。",
+                "백업을 만들거나 저장하지 못했습니다. 다시 시도하세요.",
+                "No se pudo crear o guardar la copia. Inténtalo de nuevo.",
+                "Não foi possível criar ou salvar o backup. Tente novamente."
+            )
+        case .restoreFailed:
+            return t(
+                "このファイルを復元できませんでした。有効なワリカンジのバックアップか確認してください。",
+                "This file could not be restored. Make sure it is a valid Warikanji backup.",
+                "无法恢复此文件。请确认它是有效的 Warikanji 备份。",
+                "無法還原此檔案。請確認它是有效的 Warikanji 備份。",
+                "이 파일을 복원하지 못했습니다. 올바른 Warikanji 백업인지 확인하세요.",
+                "No se pudo restaurar el archivo. Comprueba que sea una copia válida de Warikanji.",
+                "Não foi possível restaurar o arquivo. Confirme se é um backup válido do Warikanji."
+            )
+        case nil:
+            return ""
         }
     }
 
     private func deleteAccount() {
-        dismiss()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            profileStore.deleteActiveProfile()
+        if profileStore.deleteActiveProfile() {
+            dismiss()
         }
     }
 }
@@ -395,4 +641,33 @@ struct AppSettingsView: View {
 #Preview {
     AppSettingsView()
         .environmentObject(ProfileStore())
+        .environmentObject(EventViewModel())
+}
+
+private enum BackupStatus {
+    case exported
+    case restored
+    case exportFailed
+    case restoreFailed
+}
+
+private struct WarikanjiBackupDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    let data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
 }

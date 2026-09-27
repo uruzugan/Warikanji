@@ -16,12 +16,18 @@
 - 自動精算
 - 支払い状況の管理
 - レシート画像保存
+- レシートOCR（店舗名・金額・日付・通貨の読み取り）
+- 読み取り通貨からイベント通貨・参考通貨への概算換算
+- 認識全文の端末内翻訳
 - イベント・精算結果の共有
 - 検索・並び替え
 - アーカイブ / 復元
 - イベント複製
 - カレンダー連携
 - 多言語・多通貨対応
+- バックアップ・復元（レシート画像を含む）
+
+対応言語は日本語、英語、簡体字中国語、繁体字中国語、韓国語、スペイン語、ポルトガル語です。
 
 ## 使用技術
 
@@ -33,6 +39,7 @@
 - PhotosUI
 - UIKit
 - EventKit
+- Vision / Translation
 - ExchangeRate API
 
 ## アプリ構成
@@ -64,7 +71,21 @@ MVVMをベースに、画面表示・データ管理・計算処理を分離し�
 ## 開発環境
 
 - Xcode
-- iOS Simulator
+- iOS 18以降
+- iOS Simulator / 実機
+
+## テスト
+
+`KanjiHelperTests` に、費用分担・端数処理・送金計算・通貨入力・旧形式データの互換性テストを用意しています。
+
+```sh
+xcodebuild -project KanjiHelper.xcodeproj \
+  -scheme KanjiHelper \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  test
+```
+
+レシート全文の翻訳はAppleの仕様上、iOSシミュレータでは動作しません。iOS 18以降の実機で確認してください。
 
 ## 備考
 

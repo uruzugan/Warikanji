@@ -27,7 +27,12 @@ final class ReceiptImageStorage {
         }
 
         let fileName = "\(UUID().uuidString).jpg"
-        try jpegData.write(to: folderURL.appendingPathComponent(fileName), options: .atomic)
+        do {
+            try jpegData.write(to: folderURL.appendingPathComponent(fileName), options: .atomic)
+        } catch {
+            AppStorageIssueReporter.report(.save)
+            throw error
+        }
         return fileName
     }
 
@@ -35,8 +40,42 @@ final class ReceiptImageStorage {
         UIImage(contentsOfFile: folderURL.appendingPathComponent(fileName).path)
     }
 
+    func data(for fileName: String) throws -> Data {
+        try Data(contentsOf: folderURL.appendingPathComponent(fileName))
+    }
+
+    func restore(_ data: Data, fileName: String) throws {
+        guard UIImage(data: data) != nil else {
+            throw ReceiptImageError.invalidImage
+        }
+
+        do {
+            try data.write(
+                to: folderURL.appendingPathComponent(fileName),
+                options: .atomic
+            )
+        } catch {
+            AppStorageIssueReporter.report(.save)
+            throw error
+        }
+    }
+
+    func allFileNames() -> [String] {
+        (try? FileManager.default.contentsOfDirectory(
+            at: folderURL,
+            includingPropertiesForKeys: nil
+        ))?.map(\.lastPathComponent) ?? []
+    }
+
     func delete(_ fileName: String) {
-        try? FileManager.default.removeItem(at: folderURL.appendingPathComponent(fileName))
+        let url = folderURL.appendingPathComponent(fileName)
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            AppStorageIssueReporter.report(.delete)
+        }
     }
 
     func delete(_ fileNames: [String]) {

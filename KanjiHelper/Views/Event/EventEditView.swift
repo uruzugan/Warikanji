@@ -481,8 +481,9 @@ struct EventEditView: View {
         updated.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.setParticipantCount(participantCount)
 
-        viewModel.updateEvent(updated)
-        dismiss()
+        if viewModel.updateEvent(updated) {
+            dismiss()
+        }
     }
 }
 

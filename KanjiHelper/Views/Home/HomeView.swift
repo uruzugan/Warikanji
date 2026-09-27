@@ -81,6 +81,7 @@ struct HomeView: View {
                         Image(systemName: "gearshape.fill")
                             .foregroundStyle(AppTheme.primary)
                     }
+                    .accessibilityLabel(language.t(.settings))
 
                     Button { isShowingCreateSheet = true } label: {
                         Image(systemName: "plus")
@@ -90,6 +91,7 @@ struct HomeView: View {
                             .background(AppTheme.gradient)
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel(language.eventText(.newEvent))
                 }
             }
             .sheet(isPresented: $isShowingCreateSheet) {

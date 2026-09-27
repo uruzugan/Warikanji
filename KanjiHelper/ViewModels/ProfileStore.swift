@@ -71,7 +71,10 @@ final class ProfileStore: ObservableObject {
         )
 
         profiles.append(profile)
-        saveProfiles()
+        guard saveProfiles() else {
+            profiles.removeLast()
+            return nil
+        }
         switchProfile(to: profile.id)
 
         return profile
@@ -107,74 +110,56 @@ final class ProfileStore: ObservableObject {
         )
     }
 
-    func renameActiveProfile(to name: String) {
-        guard let activeProfileId,
-              let index = profiles.firstIndex(where: { $0.id == activeProfileId }) else {
-            return
-        }
-
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return }
-
-        var profile = profiles[index]
-        profile.name = trimmedName
-        profiles[index] = profile
-
-        saveProfiles()
-
-        UserDefaults.standard.set(
-            trimmedName,
-            forKey: "userName"
-        )
-    }
-
-    func setActiveLanguage(_ language: AppLanguage) {
-        updateActiveProfile {
-            $0.language = language
-        }
-    }
-
-    func setActiveHomeCurrency(_ currency: AppCurrency) {
-        updateActiveProfile {
-            $0.homeCurrency = currency
-        }
-    }
-
-    func setActiveReferenceCurrency(_ currency: AppCurrency) {
-        updateActiveProfile {
-            $0.referenceCurrency = currency
-        }
-    }
-
-    func updateActivePreferences(
+    @discardableResult
+    func updateActiveSettings(
+        name: String,
         language: AppLanguage,
         homeCurrency: AppCurrency,
         referenceCurrency: AppCurrency
-    ) {
-        updateActiveProfile {
-            $0.language = language
-            $0.homeCurrency = homeCurrency
-            $0.referenceCurrency = referenceCurrency
+    ) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return false }
+
+        guard updateActiveProfile({ profile in
+            profile.name = trimmedName
+            profile.language = language
+            profile.homeCurrency = homeCurrency
+            profile.referenceCurrency = referenceCurrency
+        }) else { return false }
+
+        UserDefaults.standard.set(trimmedName, forKey: "userName")
+        return true
+    }
+
+    @discardableResult
+    func deleteActiveProfile() -> Bool {
+        guard let activeProfileId else { return false }
+        return deleteProfile(id: activeProfileId)
+    }
+
+    @discardableResult
+    func deleteProfile(id: UUID) -> Bool {
+        guard let index = profiles.firstIndex(where: { $0.id == id }) else {
+            return false
         }
-    }
 
-    func deleteActiveProfile() {
-        guard let activeProfileId else { return }
-        deleteProfile(id: activeProfileId)
-    }
+        let previousProfiles = profiles
+        let previousActiveProfileId = activeProfileId
+        profiles.remove(at: index)
 
-    func deleteProfile(id: UUID) {
-        guard profiles.contains(where: { $0.id == id }) else {
-            return
+        if activeProfileId == id {
+            activeProfileId = nil
+        }
+
+        guard saveProfiles() else {
+            profiles = previousProfiles
+            activeProfileId = previousActiveProfileId
+            return false
         }
 
         deleteProfileData(for: id)
 
-        profiles.removeAll { $0.id == id }
-
-        if activeProfileId == id {
-            activeProfileId = nil
-
+        if previousActiveProfileId == id {
             UserDefaults.standard.removeObject(
                 forKey: activeProfileKey
             )
@@ -183,8 +168,32 @@ final class ProfileStore: ObservableObject {
                 forKey: "userName"
             )
         }
+        return true
+    }
 
-        saveProfiles()
+    func exportBackupData() throws -> Data {
+        try BackupService.shared.export(
+            profiles: profiles,
+            activeProfileId: activeProfileId
+        )
+    }
+
+    func restoreBackupData(_ data: Data) throws {
+        let archive = try BackupService.shared.decode(data)
+        try BackupService.shared.restore(archive, replacing: profiles)
+
+        profiles = archive.profiles
+        activeProfileId = archive.activeProfileId ?? archive.profiles.first?.id
+        guard saveProfiles() else { throw BackupError.storageFailure }
+        EventLifecycleStore.shared.replace(with: archive.lifecycleStates)
+
+        if let profile = activeProfile {
+            UserDefaults.standard.set(profile.id.uuidString, forKey: activeProfileKey)
+            UserDefaults.standard.set(profile.name, forKey: "userName")
+        } else {
+            UserDefaults.standard.removeObject(forKey: activeProfileKey)
+            UserDefaults.standard.removeObject(forKey: "userName")
+        }
     }
 
     private func deleteProfileData(for id: UUID) {
@@ -208,27 +217,32 @@ final class ProfileStore: ObservableObject {
         storage.delete(filename: filename)
     }
 
+    @discardableResult
     private func updateActiveProfile(
         _ update: (inout LocalProfile) -> Void
-    ) {
+    ) -> Bool {
         guard let activeProfileId,
               let index = profiles.firstIndex(where: { $0.id == activeProfileId }) else {
-            return
+            return false
         }
 
-        var profile = profiles[index]
-        update(&profile)
-        profiles[index] = profile
-        saveProfiles()
+        let previousProfile = profiles[index]
+        update(&profiles[index])
+
+        guard saveProfiles() else {
+            profiles[index] = previousProfile
+            return false
+        }
+        return true
     }
 
     private func load() {
-        if let data = UserDefaults.standard.data(forKey: profilesKey),
-           let decoded = try? JSONDecoder().decode(
-                [LocalProfile].self,
-                from: data
-           ) {
-            profiles = decoded
+        if let data = UserDefaults.standard.data(forKey: profilesKey) {
+            do {
+                profiles = try JSONDecoder().decode([LocalProfile].self, from: data)
+            } catch {
+                AppStorageIssueReporter.report(.load)
+            }
         }
 
         if let idString = UserDefaults.standard.string(forKey: activeProfileKey),
@@ -245,14 +259,21 @@ final class ProfileStore: ObservableObject {
         }
     }
 
-    private func saveProfiles() {
-        guard let data = try? JSONEncoder().encode(profiles) else {
-            return
+    @discardableResult
+    private func saveProfiles() -> Bool {
+        let data: Data
+
+        do {
+            data = try JSONEncoder().encode(profiles)
+        } catch {
+            AppStorageIssueReporter.report(.save)
+            return false
         }
 
         UserDefaults.standard.set(
             data,
             forKey: profilesKey
         )
+        return true
     }
 }

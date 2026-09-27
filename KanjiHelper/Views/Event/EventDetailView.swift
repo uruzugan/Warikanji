@@ -108,8 +108,9 @@ struct EventDetailView: View {
             titleVisibility: .visible
         ) {
             Button(t("削除する", "Delete", "删除", "刪除", "삭제", "Eliminar", "Excluir"), role: .destructive) {
-                viewModel.deleteEvent(event)
-                dismiss()
+                if viewModel.deleteEvent(event) {
+                    dismiss()
+                }
             }
 
             Button(t("キャンセル", "Cancel", "取消", "取消", "취소", "Cancelar", "Cancelar"), role: .cancel) {}

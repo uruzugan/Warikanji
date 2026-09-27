@@ -86,22 +86,6 @@ enum SettlementRounding: Int, Codable, CaseIterable, Identifiable {
     case thousand = 1000
 
     var id: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .exact: return "1円まで正確"
-        case .hundred: return "100円単位"
-        case .fiveHundred: return "500円単位"
-        case .thousand: return "1,000円単位"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .exact: return "合計が一致するよう1円単位まで正確に計算します。"
-        default: return "できるだけ\(title)のキリのよい金額に調整します。"
-        }
-    }
 }
 
 struct Expense: Identifiable, Codable, Equatable {

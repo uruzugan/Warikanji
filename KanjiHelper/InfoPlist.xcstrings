@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "CFBundleDisplayName" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ワリカンジ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Warikanji" } }
+      }
+    },
     "NSCalendarsWriteOnlyAccessUsageDescription" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Add event schedules to your calendar." } },

@@ -45,20 +45,23 @@ final class EventViewModel: ObservableObject {
             filename: "events.json"
         ) {
             events = legacyEvents
-            storage.save(
+            let migrated = storage.save(
                 legacyEvents,
                 filename: storageFilename
             )
-            storage.delete(filename: "events.json")
+            if migrated {
+                storage.delete(filename: "events.json")
+            }
             return
         }
 
         events = []
     }
 
-    func saveEvents() {
-        guard let storageFilename else { return }
-        storage.save(events, filename: storageFilename)
+    @discardableResult
+    func saveEvents() -> Bool {
+        guard let storageFilename else { return false }
+        return storage.save(events, filename: storageFilename)
     }
 
     func isEventLocked(_ eventId: UUID) -> Bool {
@@ -77,7 +80,8 @@ final class EventViewModel: ObservableObject {
         events[eventIndex].expenses.firstIndex { $0.id == expenseId }
     }
 
-    func addEvent(_ event: Event) {
+    @discardableResult
+    func addEvent(_ event: Event) -> Bool {
         var updated = event
         updated.expectedParticipantCount = max(
             updated.expectedParticipantCount,
@@ -86,13 +90,19 @@ final class EventViewModel: ObservableObject {
         )
 
         events.append(updated)
-        saveEvents()
+        guard saveEvents() else {
+            events.removeLast()
+            return false
+        }
+        return true
     }
 
-    func updateEvent(_ event: Event) {
+    @discardableResult
+    func updateEvent(_ event: Event) -> Bool {
         guard canEdit(event.id),
-              let index = indexOfEvent(event.id) else { return }
+              let index = indexOfEvent(event.id) else { return false }
 
+        let previousEvent = events[index]
         var updated = event
         updated.expectedParticipantCount = max(
             updated.expectedParticipantCount,
@@ -101,16 +111,28 @@ final class EventViewModel: ObservableObject {
         )
 
         events[index] = updated
-        saveEvents()
+        guard saveEvents() else {
+            events[index] = previousEvent
+            return false
+        }
+        return true
     }
 
-    func deleteEvent(_ event: Event) {
-        guard canEdit(event.id) else { return }
+    @discardableResult
+    func deleteEvent(_ event: Event) -> Bool {
+        guard canEdit(event.id) else { return false }
+
+        let previousEvents = events
+        events.removeAll { $0.id == event.id }
+
+        guard saveEvents() else {
+            events = previousEvents
+            return false
+        }
 
         deleteReceiptImages(in: event)
-        events.removeAll { $0.id == event.id }
         EventLifecycleStore.shared.removeState(for: event.id)
-        saveEvents()
+        return true
     }
 
     func deleteEvents(at offsets: IndexSet) {
@@ -125,13 +147,18 @@ final class EventViewModel: ObservableObject {
             events.indices.contains($0) ? events[$0] : nil
         }
 
+        let previousEvents = events
+        events.remove(atOffsets: allowed)
+
+        guard saveEvents() else {
+            events = previousEvents
+            return
+        }
+
         deletingEvents.forEach {
             deleteReceiptImages(in: $0)
             EventLifecycleStore.shared.removeState(for: $0.id)
         }
-
-        events.remove(atOffsets: allowed)
-        saveEvents()
     }
 
     func binding(for eventId: UUID) -> Binding<Event> {
@@ -153,6 +180,7 @@ final class EventViewModel: ObservableObject {
         guard canEdit(eventId),
               let index = indexOfEvent(eventId) else { return }
 
+        let previousEvent = events[index]
         events[index].participants.append(participant)
         events[index].expectedParticipantCount = max(
             events[index].expectedParticipantCount,
@@ -162,7 +190,9 @@ final class EventViewModel: ObservableObject {
 
         events[index].transfers = []
         prepareRandomOrders(at: index)
-        saveEvents()
+        if !saveEvents() {
+            events[index] = previousEvent
+        }
     }
 
     func updateParticipant(_ participant: EventParticipant, in eventId: UUID) {
@@ -172,28 +202,37 @@ final class EventViewModel: ObservableObject {
                 where: { $0.id == participant.id }
               ) else { return }
 
+        let previousEvent = events[eventIndex]
         events[eventIndex].participants[participantIndex] = participant
-        saveEvents()
+        if !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 
     func deleteParticipant(participantId: UUID, from eventId: UUID) {
         guard canEdit(eventId),
               let eventIndex = indexOfEvent(eventId) else { return }
 
+        let previousEvent = events[eventIndex]
         events[eventIndex].participants.removeAll { $0.id == participantId }
         events[eventIndex].transfers = []
         prepareRandomOrders(at: eventIndex)
-        saveEvents()
+        if !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 
     func deleteParticipants(at offsets: IndexSet, from eventId: UUID) {
         guard canEdit(eventId),
               let eventIndex = indexOfEvent(eventId) else { return }
 
+        let previousEvent = events[eventIndex]
         events[eventIndex].participants.remove(atOffsets: offsets)
         events[eventIndex].transfers = []
         prepareRandomOrders(at: eventIndex)
-        saveEvents()
+        if !saveEvents() {
+            events[eventIndex] = previousEvent
+        }
     }
 
     private func deleteReceiptImages(in event: Event) {

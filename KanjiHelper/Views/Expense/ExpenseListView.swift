@@ -70,6 +70,13 @@ struct ExpenseListView: View {
                             .background(AppTheme.gradient)
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel(
+                        language.text(
+                            ja: "費用を追加", en: "Add Expense",
+                            zhHans: "添加费用", zhHant: "新增費用",
+                            ko: "비용 추가", es: "Añadir gasto", pt: "Adicionar despesa"
+                        )
+                    )
                 }
             }
         }

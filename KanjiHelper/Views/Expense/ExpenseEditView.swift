@@ -308,9 +308,12 @@ struct ExpenseEditView: View {
         updated.date = hasExpenseDate ? expenseDate : nil
         updated.receiptImageFileNames = newFiles.isEmpty ? nil : newFiles
 
-        viewModel.updateExpense(updated, in: eventId)
-        ReceiptImageStorage.shared.delete(oldFiles)
-        dismiss()
+        if viewModel.updateExpense(updated, in: eventId) {
+            ReceiptImageStorage.shared.delete(oldFiles)
+            dismiss()
+        } else {
+            ReceiptImageStorage.shared.delete(newFiles)
+        }
     }
 
     private func applyOCR(_ result: ReceiptOCRResult) {
