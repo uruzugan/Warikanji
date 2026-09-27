@@ -126,6 +126,8 @@ struct Event: Identifiable, Codable, Equatable {
         ids.formUnion(planning.participantResponses.map(\.participantId))
         ids.formUnion(planning.parts.flatMap(\.participantIds))
         ids.formUnion(planning.tasks.flatMap(\.assigneeParticipantIds))
+        ids.formUnion(planning.preparationItems.flatMap(\.assigneeParticipantIds))
+        ids.formUnion(planning.timelineEntries.flatMap(\.assigneeParticipantIds))
         ids.formUnion(planning.access.members.compactMap(\.participantId))
         ids.formUnion(planning.schedulePoll.responses.map(\.participantId))
         ids.formUnion(
@@ -254,6 +256,14 @@ struct Event: Identifiable, Codable, Equatable {
         for taskIndex in planning.tasks.indices
         where planning.tasks[taskIndex].partId.map(partIds.contains) == true {
             planning.tasks[taskIndex].partId = nil
+        }
+        for itemIndex in planning.preparationItems.indices
+        where planning.preparationItems[itemIndex].partId.map(partIds.contains) == true {
+            planning.preparationItems[itemIndex].partId = nil
+        }
+        for entryIndex in planning.timelineEntries.indices
+        where planning.timelineEntries[entryIndex].partId.map(partIds.contains) == true {
+            planning.timelineEntries[entryIndex].partId = nil
         }
         for expenseIndex in expenses.indices
         where expenses[expenseIndex].partId.map(partIds.contains) == true {

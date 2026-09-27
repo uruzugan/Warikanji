@@ -91,6 +91,25 @@ enum EventPlanningText: Int {
     case cancellationDeadline
     case clearReservation
     case openLink
+    case preparationItems
+    case itemsDescription
+    case addItem
+    case noItems
+    case itemTitle
+    case quantity
+    case needed
+    case assigned
+    case ready
+    case newItem
+    case editItem
+    case timeline
+    case timelineDescription
+    case addTimelineEntry
+    case noTimelineEntries
+    case timelineTitle
+    case newTimelineEntry
+    case editTimelineEntry
+    case completedTimeline
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -183,7 +202,26 @@ private let eventPlanningTexts: [[String]] = [
     ["予約者名", "Contact Name", "预约人姓名", "預約人姓名", "예약자 이름", "Nombre de contacto", "Nome do contato"],
     ["キャンセル期限", "Cancellation Deadline", "取消期限", "取消期限", "취소 기한", "Límite de cancelación", "Prazo de cancelamento"],
     ["予約情報を削除", "Clear Reservation", "删除预约信息", "刪除預約資訊", "예약 정보 삭제", "Borrar reserva", "Limpar reserva"],
-    ["リンクを開く", "Open Link", "打开链接", "開啟連結", "링크 열기", "Abrir enlace", "Abrir link"]
+    ["リンクを開く", "Open Link", "打开链接", "開啟連結", "링크 열기", "Abrir enlace", "Abrir link"],
+    ["持ち物", "Items", "物品", "物品", "준비물", "Objetos", "Itens"],
+    ["必要な物・数量・担当者を管理", "Track items, quantities, and owners", "管理所需物品、数量和负责人", "管理所需物品、數量和負責人", "준비물·수량·담당자 관리", "Controla objetos, cantidades y responsables", "Gerencie itens, quantidades e responsáveis"],
+    ["持ち物を追加", "Add Item", "添加物品", "新增物品", "준비물 추가", "Añadir objeto", "Adicionar item"],
+    ["持ち物はありません", "No items yet", "暂无物品", "尚無物品", "준비물이 없습니다", "Aún no hay objetos", "Ainda não há itens"],
+    ["持ち物名", "Item Name", "物品名称", "物品名稱", "준비물 이름", "Nombre del objeto", "Nome do item"],
+    ["数量", "Quantity", "数量", "數量", "수량", "Cantidad", "Quantidade"],
+    ["未手配", "Needed", "未安排", "未安排", "미준비", "Pendiente", "Necessário"],
+    ["担当決定", "Assigned", "已分配", "已分配", "담당 지정", "Asignado", "Atribuído"],
+    ["準備完了", "Ready", "准备完成", "準備完成", "준비 완료", "Listo", "Pronto"],
+    ["新しい持ち物", "New Item", "新物品", "新物品", "새 준비물", "Nuevo objeto", "Novo item"],
+    ["持ち物を編集", "Edit Item", "编辑物品", "編輯物品", "준비물 편집", "Editar objeto", "Editar item"],
+    ["タイムライン", "Timeline", "时间线", "時間軸", "타임라인", "Cronograma", "Cronograma"],
+    ["当日の流れ・場所・担当者を時系列で管理", "Track the day's schedule, locations, and owners", "按时间管理当天流程、地点和负责人", "按時間管理當天流程、地點和負責人", "당일 일정·장소·담당자를 시간순으로 관리", "Ordena el programa, lugares y responsables", "Organize horários, locais e responsáveis"],
+    ["予定を追加", "Add Timeline Entry", "添加日程", "新增行程", "일정 추가", "Añadir actividad", "Adicionar atividade"],
+    ["予定はありません", "No timeline entries yet", "暂无日程", "尚無行程", "일정이 없습니다", "Aún no hay actividades", "Ainda não há atividades"],
+    ["予定名", "Timeline Title", "日程名称", "行程名稱", "일정 이름", "Título de la actividad", "Título da atividade"],
+    ["新しい予定", "New Timeline Entry", "新日程", "新行程", "새 일정", "Nueva actividad", "Nova atividade"],
+    ["予定を編集", "Edit Timeline Entry", "编辑日程", "編輯行程", "일정 편집", "Editar actividad", "Editar atividade"],
+    ["実施済み", "Completed", "已完成", "已完成", "완료", "Completada", "Concluída"]
 ]
 
 extension AppLanguage {
@@ -265,6 +303,16 @@ extension ReservationStatus {
         case .requested: return language.planningText(.requested)
         case .confirmed: return language.planningText(.confirmed)
         case .cancelled: return language.planningText(.cancelled)
+        }
+    }
+}
+
+extension PreparationItemStatus {
+    func displayName(for language: AppLanguage) -> String {
+        switch self {
+        case .needed: return language.planningText(.needed)
+        case .assigned: return language.planningText(.assigned)
+        case .ready: return language.planningText(.ready)
         }
     }
 }

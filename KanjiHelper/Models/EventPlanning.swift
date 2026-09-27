@@ -213,6 +213,8 @@ struct EventPlanningState: Codable, Equatable {
     var parts: [EventPart]
     var participantResponses: [ParticipantResponse]
     var tasks: [EventTask]
+    var preparationItems: [EventPreparationItem]
+    var timelineEntries: [EventTimelineEntry]
     var activity: [EventActivityRecord]
     var dismissedAssistantActionKeys: Set<String>
 
@@ -226,6 +228,8 @@ struct EventPlanningState: Codable, Equatable {
         parts: [EventPart] = [],
         participantResponses: [ParticipantResponse] = [],
         tasks: [EventTask] = [],
+        preparationItems: [EventPreparationItem] = [],
+        timelineEntries: [EventTimelineEntry] = [],
         activity: [EventActivityRecord] = [],
         dismissedAssistantActionKeys: Set<String> = []
     ) {
@@ -238,6 +242,8 @@ struct EventPlanningState: Codable, Equatable {
         self.parts = parts
         self.participantResponses = participantResponses
         self.tasks = tasks
+        self.preparationItems = preparationItems
+        self.timelineEntries = timelineEntries
         self.activity = activity
         self.dismissedAssistantActionKeys = dismissedAssistantActionKeys
     }
@@ -245,7 +251,8 @@ struct EventPlanningState: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case formatVersion, features, access, schedulePoll, venuePlanning, budgetPlan
         case parts, participantResponses
-        case tasks, activity, dismissedAssistantActionKeys
+        case tasks, preparationItems, timelineEntries
+        case activity, dismissedAssistantActionKeys
     }
 
     init(from decoder: Decoder) throws {
@@ -277,6 +284,14 @@ struct EventPlanningState: Codable, Equatable {
             forKey: .participantResponses
         ) ?? []
         tasks = try container.decodeIfPresent([EventTask].self, forKey: .tasks) ?? []
+        preparationItems = try container.decodeIfPresent(
+            [EventPreparationItem].self,
+            forKey: .preparationItems
+        ) ?? []
+        timelineEntries = try container.decodeIfPresent(
+            [EventTimelineEntry].self,
+            forKey: .timelineEntries
+        ) ?? []
         activity = try container.decodeIfPresent(
             [EventActivityRecord].self,
             forKey: .activity
@@ -303,6 +318,12 @@ struct EventPlanningState: Codable, Equatable {
 
         for index in tasks.indices {
             tasks[index].assigneeParticipantIds.remove(participantId)
+        }
+        for index in preparationItems.indices {
+            preparationItems[index].assigneeParticipantIds.remove(participantId)
+        }
+        for index in timelineEntries.indices {
+            timelineEntries[index].assigneeParticipantIds.remove(participantId)
         }
 
         for index in access.members.indices where access.members[index].participantId == participantId {
@@ -356,6 +377,34 @@ struct EventPlanningState: Codable, Equatable {
                 isPrivate: task.isPrivate
             )
         }
+        let duplicatedItems = preparationItems.map { item in
+            let assigneeIds = Set(
+                item.assigneeParticipantIds.compactMap { participantMap[$0] }
+            )
+            return EventPreparationItem(
+                title: item.title,
+                quantity: item.quantity,
+                notes: item.notes,
+                assigneeParticipantIds: assigneeIds,
+                partId: item.partId.flatMap { partMap[$0] },
+                status: assigneeIds.isEmpty ? .needed : .assigned,
+                isPrivate: item.isPrivate
+            )
+        }
+        let duplicatedTimeline = timelineEntries.map { entry in
+            EventTimelineEntry(
+                title: entry.title,
+                startAt: entry.startAt,
+                endAt: entry.endAt,
+                location: entry.location,
+                notes: entry.notes,
+                assigneeParticipantIds: Set(
+                    entry.assigneeParticipantIds.compactMap { participantMap[$0] }
+                ),
+                partId: entry.partId.flatMap { partMap[$0] },
+                isPrivate: entry.isPrivate
+            )
+        }
 
         return Self(
             features: features,
@@ -363,7 +412,9 @@ struct EventPlanningState: Codable, Equatable {
             venuePlanning: venuePlanning.duplicated(),
             budgetPlan: budgetPlan.duplicated(using: participantMap),
             parts: duplicatedParts,
-            tasks: duplicatedTasks
+            tasks: duplicatedTasks,
+            preparationItems: duplicatedItems,
+            timelineEntries: duplicatedTimeline
         )
     }
 }

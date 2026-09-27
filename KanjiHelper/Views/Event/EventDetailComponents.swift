@@ -456,8 +456,17 @@ struct EventDetailMenu: View {
     }
 
     private var tasksSubtitle: String {
-        let incomplete = event.planning.tasks.filter { $0.status != .completed }.count
-        if event.planning.tasks.isEmpty { return language.planningText(.noTasks) }
+        let incompleteTasks = event.planning.tasks.filter {
+            $0.status != .completed
+        }.count
+        let incompleteItems = event.planning.preparationItems.filter {
+            $0.status != .ready
+        }.count
+        let incomplete = incompleteTasks + incompleteItems
+        if event.planning.tasks.isEmpty,
+           event.planning.preparationItems.isEmpty {
+            return language.planningText(.noTasks)
+        }
 
         switch language {
         case .japanese: return "未完了 \(incomplete)件"
@@ -467,6 +476,23 @@ struct EventDetailMenu: View {
         case .korean: return "미완료 \(incomplete)개"
         case .spanish: return "\(incomplete) sin completar"
         case .portuguese: return "\(incomplete) pendentes"
+        }
+    }
+
+    private var timelineSubtitle: String {
+        let entries = event.planning.timelineEntries
+        guard !entries.isEmpty else {
+            return language.planningText(.noTimelineEntries)
+        }
+        let incomplete = entries.filter { !$0.isCompleted }.count
+        switch language {
+        case .japanese: return "予定 \(entries.count)件・未実施 \(incomplete)件"
+        case .english: return "\(entries.count) entries · \(incomplete) remaining"
+        case .simplifiedChinese: return "\(entries.count)项日程・\(incomplete)项未完成"
+        case .traditionalChinese: return "\(entries.count)項行程・\(incomplete)項未完成"
+        case .korean: return "일정 \(entries.count)개 · 미완료 \(incomplete)개"
+        case .spanish: return "\(entries.count) actividades · \(incomplete) pendientes"
+        case .portuguese: return "\(entries.count) atividades · \(incomplete) pendentes"
         }
     }
 
@@ -571,13 +597,27 @@ struct EventDetailMenu: View {
 
             if event.planning.features.contains(.tasksAndItems) {
                 NavigationLink {
-                    EventTaskListView(eventId: eventId)
+                    EventChecklistView(eventId: eventId)
                 } label: {
                     card(
                         language.planningText(.tasks),
                         tasksSubtitle,
                         "checklist",
                         AppTheme.primary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.timeline) {
+                NavigationLink {
+                    EventTimelineView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.timeline),
+                        timelineSubtitle,
+                        "clock.fill",
+                        AppTheme.secondary
                     )
                 }
                 .buttonStyle(.plain)

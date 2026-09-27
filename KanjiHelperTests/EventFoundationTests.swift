@@ -149,6 +149,16 @@ final class EventFoundationTests: XCTestCase {
             EventTask(title: "Removed", partId: removedPartId),
             EventTask(title: "Retained", partId: retainedPartId)
         ]
+        event.planning.preparationItems = [
+            EventPreparationItem(title: "Tent", partId: removedPartId)
+        ]
+        event.planning.timelineEntries = [
+            EventTimelineEntry(
+                title: "Meet",
+                startAt: Date(timeIntervalSince1970: 1_000),
+                partId: removedPartId
+            )
+        ]
 
         event.removePlanningParts([removedPartId])
 
@@ -160,6 +170,8 @@ final class EventFoundationTests: XCTestCase {
         )
         XCTAssertNil(event.planning.tasks[0].partId)
         XCTAssertEqual(event.planning.tasks[1].partId, retainedPartId)
+        XCTAssertNil(event.planning.preparationItems[0].partId)
+        XCTAssertNil(event.planning.timelineEntries[0].partId)
         XCTAssertNil(event.expenses[0].partId)
         XCTAssertEqual(event.expenses[1].partId, retainedPartId)
     }
@@ -254,6 +266,80 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(planning.budgetPlan.subsidizedParticipantIds.isEmpty)
     }
 
+    func testRemovingParticipantCleansOrganizerToolAssignments() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            preparationItems: [
+                EventPreparationItem(
+                    title: "Cake",
+                    assigneeParticipantIds: [participantId]
+                )
+            ],
+            timelineEntries: [
+                EventTimelineEntry(
+                    title: "Toast",
+                    startAt: Date(timeIntervalSince1970: 1_000),
+                    assigneeParticipantIds: [participantId]
+                )
+            ]
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertTrue(
+            planning.preparationItems[0].assigneeParticipantIds.isEmpty
+        )
+        XCTAssertTrue(
+            planning.timelineEntries[0].assigneeParticipantIds.isEmpty
+        )
+    }
+
+    func testDuplicateOrganizerToolsMapsReferencesAndResetsProgress() {
+        let oldParticipantId = UUID()
+        let newParticipantId = UUID()
+        let oldPartId = UUID()
+        let newPartId = UUID()
+        let planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            preparationItems: [
+                EventPreparationItem(
+                    title: "Cake",
+                    assigneeParticipantIds: [oldParticipantId],
+                    partId: oldPartId,
+                    status: .ready
+                )
+            ],
+            timelineEntries: [
+                EventTimelineEntry(
+                    title: "Toast",
+                    startAt: Date(timeIntervalSince1970: 1_000),
+                    assigneeParticipantIds: [oldParticipantId],
+                    partId: oldPartId,
+                    isCompleted: true
+                )
+            ]
+        )
+
+        let copy = planning.duplicated(
+            using: [oldParticipantId: newParticipantId],
+            partMap: [oldPartId: newPartId]
+        )
+
+        XCTAssertEqual(copy.preparationItems[0].status, .assigned)
+        XCTAssertEqual(
+            copy.preparationItems[0].assigneeParticipantIds,
+            [newParticipantId]
+        )
+        XCTAssertEqual(copy.preparationItems[0].partId, newPartId)
+        XCTAssertFalse(copy.timelineEntries[0].isCompleted)
+        XCTAssertEqual(
+            copy.timelineEntries[0].assigneeParticipantIds,
+            [newParticipantId]
+        )
+        XCTAssertEqual(copy.timelineEntries[0].partId, newPartId)
+    }
+
     func testDuplicateBudgetMapsParticipantsAndReopensApproval() {
         let oldOrganizerId = UUID()
         let oldSubsidizedId = UUID()
@@ -317,6 +403,25 @@ final class EventFoundationTests: XCTestCase {
 
         XCTAssertTrue(actions.contains { $0.id == "budget.totalExceeded" })
         XCTAssertTrue(actions.contains { $0.id == "budget.advanceExceeded" })
+    }
+
+    func testAssistantFindsUnassignedItemsAndMissingTimeline() {
+        var event = Event(
+            title: "Party",
+            eventType: .party,
+            participants: [EventParticipant(name: "A")]
+        )
+        event.planning.preparationItems = [
+            EventPreparationItem(title: "Cake")
+        ]
+
+        let actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+
+        XCTAssertTrue(actions.contains { $0.id == "items.unassigned" })
+        XCTAssertTrue(actions.contains { $0.id == "timeline.empty" })
     }
 
     func testDuplicateCoordinationResetsVotesAndReservation() {

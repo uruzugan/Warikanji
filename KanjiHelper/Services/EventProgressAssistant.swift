@@ -383,6 +383,63 @@ enum EventProgressAssistant {
             )
         }
 
+        if event.planning.features.contains(.tasksAndItems) {
+            let unassignedItems = event.planning.preparationItems.filter {
+                $0.status != .ready && $0.assigneeParticipantIds.isEmpty
+            }
+            if !unassignedItems.isEmpty {
+                actions.append(
+                    action(
+                        id: "items.unassigned",
+                        priority: .high,
+                        symbol: "shippingbox.and.arrow.backward.fill",
+                        title: language.text(
+                            ja: "持ち物の担当を決定", en: "Assign preparation items",
+                            zhHans: "分配物品负责人", zhHant: "分配物品負責人",
+                            ko: "준비물 담당자 지정", es: "Asigna los objetos",
+                            pt: "Atribua os itens"
+                        ),
+                        detail: countText(
+                            unassignedItems.count,
+                            language: language,
+                            ja: "担当未定：%d件", en: "%d items need an owner",
+                            zhHans: "%d项物品未分配", zhHant: "%d項物品未分配",
+                            ko: "담당 미정 %d개", es: "%d objetos sin responsable",
+                            pt: "%d itens sem responsável"
+                        ),
+                        destination: "checklist"
+                    )
+                )
+            }
+        }
+
+        if event.planning.features.contains(.timeline),
+           event.planning.timelineEntries.isEmpty {
+            actions.append(
+                action(
+                    id: "timeline.empty",
+                    priority: .normal,
+                    symbol: "clock.badge.plus",
+                    title: language.text(
+                        ja: "当日の流れを作成", en: "Create the event timeline",
+                        zhHans: "创建当天时间线", zhHant: "建立當天時間軸",
+                        ko: "당일 일정 만들기", es: "Crea el cronograma",
+                        pt: "Crie o cronograma"
+                    ),
+                    detail: language.text(
+                        ja: "集合・乾杯・写真・会計などを時系列で整理します。",
+                        en: "Organize arrival, opening, photos, and payment in order.",
+                        zhHans: "按顺序整理集合、开场、拍照和结账。",
+                        zhHant: "依序整理集合、開場、拍照與結帳。",
+                        ko: "집합·시작·사진·결제를 시간순으로 정리하세요.",
+                        es: "Ordena llegada, apertura, fotos y pago.",
+                        pt: "Organize chegada, abertura, fotos e pagamento."
+                    ),
+                    destination: "timeline"
+                )
+            )
+        }
+
         if event.planning.features.contains(.settlement),
            !event.expenses.isEmpty,
            event.transfers.isEmpty {
