@@ -210,7 +210,8 @@ struct EventDetailView: View {
                 "El evento ha terminado, pero aún hay pagos pendientes.",
                 "O evento terminou, mas ainda há pagamentos pendentes."
             )
-        } else {
+        } else if event.planning.features.contains(.expenseTracking)
+                    || event.planning.features.contains(.settlement) {
             message = t(
                 "開催期間は終了しています。費用や精算内容を確認しましょう。",
                 "This event has ended. Check the expenses and settlement details.",
@@ -219,6 +220,16 @@ struct EventDetailView: View {
                 "이벤트가 종료되었습니다. 비용과 정산 내용을 확인하세요.",
                 "El evento ha terminado. Revisa los gastos y la liquidación.",
                 "O evento terminou. Verifique as despesas e o acerto."
+            )
+        } else {
+            message = t(
+                "開催期間は終了しています。タスクや記録を確認しましょう。",
+                "This event has ended. Review tasks and event notes.",
+                "活动已结束，请确认任务和活动记录。",
+                "活動已結束，請確認任務和活動記錄。",
+                "이벤트가 종료되었습니다. 작업과 기록을 확인하세요.",
+                "El evento ha terminado. Revisa las tareas y las notas.",
+                "O evento terminou. Revise as tarefas e as anotações."
             )
         }
 

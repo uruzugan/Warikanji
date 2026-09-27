@@ -6,7 +6,12 @@ struct EventProgressAssistantCard: View {
 
     private var actions: [EventAssistantAction] {
         EventProgressAssistant.actions(for: event, language: language)
-            .filter { ["participants", "settlement", "payments"].contains($0.destinationKey) }
+            .filter {
+                [
+                    "participants", "attendance", "parts", "tasks",
+                    "settlement", "payments"
+                ].contains($0.destinationKey)
+            }
             .prefix(3)
             .map { $0 }
     }
@@ -40,6 +45,27 @@ struct EventProgressAssistantCard: View {
         case "participants":
             NavigationLink {
                 ParticipantManagementView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "attendance":
+            NavigationLink {
+                AttendanceManagementView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "parts":
+            NavigationLink {
+                EventPartsManagementView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "tasks":
+            NavigationLink {
+                EventTaskListView(eventId: event.id)
             } label: {
                 actionRow(action)
             }

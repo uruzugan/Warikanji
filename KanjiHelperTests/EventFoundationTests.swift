@@ -114,6 +114,56 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertEqual(planning.activity.last?.actionKey, "event.509")
     }
 
+    func testRemovingPartClearsAllPartReferences() {
+        let participantId = UUID()
+        let removedPartId = UUID()
+        let retainedPartId = UUID()
+        var event = Event(
+            title: "Trip",
+            participants: [EventParticipant(id: participantId, name: "A")],
+            expenses: [
+                Expense(title: "Hotel", amount: 1_000, partId: removedPartId),
+                Expense(title: "Train", amount: 500, partId: retainedPartId)
+            ]
+        )
+        event.planning.parts = [
+            EventPart(id: removedPartId, title: "Day 1", order: 0),
+            EventPart(id: retainedPartId, title: "Day 2", order: 1)
+        ]
+        event.planning.participantResponses = [
+            ParticipantResponse(
+                participantId: participantId,
+                partAttendance: [
+                    PartAttendanceResponse(
+                        partId: removedPartId,
+                        status: .attending
+                    ),
+                    PartAttendanceResponse(
+                        partId: retainedPartId,
+                        status: .attending
+                    )
+                ]
+            )
+        ]
+        event.planning.tasks = [
+            EventTask(title: "Removed", partId: removedPartId),
+            EventTask(title: "Retained", partId: retainedPartId)
+        ]
+
+        event.removePlanningParts([removedPartId])
+
+        XCTAssertEqual(event.planning.parts.map(\.id), [retainedPartId])
+        XCTAssertEqual(event.planning.parts[0].order, 0)
+        XCTAssertEqual(
+            event.planning.participantResponses[0].partAttendance.map(\.partId),
+            [retainedPartId]
+        )
+        XCTAssertNil(event.planning.tasks[0].partId)
+        XCTAssertEqual(event.planning.tasks[1].partId, retainedPartId)
+        XCTAssertNil(event.expenses[0].partId)
+        XCTAssertEqual(event.expenses[1].partId, retainedPartId)
+    }
+
     func testAssistantPrioritizesOverdueTaskAndUnpaidTransfer() {
         let participants = [
             EventParticipant(name: "A"),

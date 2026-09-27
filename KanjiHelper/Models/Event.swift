@@ -232,4 +232,25 @@ struct Event: Identifiable, Codable, Equatable {
             expectedParticipantCount = participants.count
         }
     }
+
+    mutating func removePlanningParts(_ partIds: Set<UUID>) {
+        planning.parts.removeAll { partIds.contains($0.id) }
+
+        for responseIndex in planning.participantResponses.indices {
+            planning.participantResponses[responseIndex].partAttendance.removeAll {
+                partIds.contains($0.partId)
+            }
+        }
+        for taskIndex in planning.tasks.indices
+        where planning.tasks[taskIndex].partId.map(partIds.contains) == true {
+            planning.tasks[taskIndex].partId = nil
+        }
+        for expenseIndex in expenses.indices
+        where expenses[expenseIndex].partId.map(partIds.contains) == true {
+            expenses[expenseIndex].partId = nil
+        }
+        for index in planning.parts.indices {
+            planning.parts[index].order = index
+        }
+    }
 }

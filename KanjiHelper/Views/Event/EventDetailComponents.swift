@@ -375,6 +375,52 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var attendanceSubtitle: String {
+        let answered = event.planning.participantResponses.filter {
+            $0.attendance != .unanswered
+        }.count
+
+        switch language {
+        case .japanese: return "回答済み \(answered) / \(event.participants.count)人"
+        case .english: return "\(answered) / \(event.participants.count) answered"
+        case .simplifiedChinese: return "已回答 \(answered) / \(event.participants.count) 人"
+        case .traditionalChinese: return "已回答 \(answered) / \(event.participants.count) 人"
+        case .korean: return "응답 \(answered) / \(event.participants.count)명"
+        case .spanish: return "\(answered) / \(event.participants.count) respondieron"
+        case .portuguese: return "\(answered) / \(event.participants.count) responderam"
+        }
+    }
+
+    private var partsSubtitle: String {
+        let count = event.planning.parts.count
+        if count == 0 { return language.planningText(.noParts) }
+
+        switch language {
+        case .japanese: return "\(count)部を設定済み"
+        case .english: return "\(count) parts configured"
+        case .simplifiedChinese: return "已设置\(count)个环节"
+        case .traditionalChinese: return "已設定\(count)個環節"
+        case .korean: return "\(count)개 순서 설정됨"
+        case .spanish: return "\(count) partes configuradas"
+        case .portuguese: return "\(count) etapas configuradas"
+        }
+    }
+
+    private var tasksSubtitle: String {
+        let incomplete = event.planning.tasks.filter { $0.status != .completed }.count
+        if event.planning.tasks.isEmpty { return language.planningText(.noTasks) }
+
+        switch language {
+        case .japanese: return "未完了 \(incomplete)件"
+        case .english: return "\(incomplete) incomplete"
+        case .simplifiedChinese: return "\(incomplete)项未完成"
+        case .traditionalChinese: return "\(incomplete)項未完成"
+        case .korean: return "미완료 \(incomplete)개"
+        case .spanish: return "\(incomplete) sin completar"
+        case .portuguese: return "\(incomplete) pendentes"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(
@@ -397,6 +443,48 @@ struct EventDetailMenu: View {
                 )
             }
             .buttonStyle(.plain)
+
+            if event.planning.features.contains(.attendance) {
+                NavigationLink {
+                    AttendanceManagementView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.attendance),
+                        attendanceSubtitle,
+                        "person.crop.circle.badge.checkmark",
+                        AppTheme.secondary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.multipleParts) {
+                NavigationLink {
+                    EventPartsManagementView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.eventParts),
+                        partsSubtitle,
+                        "square.stack.3d.up.fill",
+                        AppTheme.warning
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.tasksAndItems) {
+                NavigationLink {
+                    EventTaskListView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.tasks),
+                        tasksSubtitle,
+                        "checklist",
+                        AppTheme.primary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
 
             if event.planning.features.contains(.expenseTracking) {
                 NavigationLink {
