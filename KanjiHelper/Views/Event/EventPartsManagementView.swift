@@ -158,6 +158,7 @@ private struct EventPartEditView: View {
 
     private var event: Event? { viewModel.event(for: eventId) }
     private var language: AppLanguage { profileStore.activeLanguage }
+    private var isLocked: Bool { !viewModel.canEdit(eventId) }
     private var isSaveDisabled: Bool {
         part.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -238,10 +239,13 @@ private struct EventPartEditView: View {
             )
         )
         .navigationBarTitleDisplayMode(.inline)
+        .disabled(isLocked)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(language.planningText(.save), action: save)
-                    .disabled(isSaveDisabled)
+            if !isLocked {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(language.planningText(.save), action: save)
+                        .disabled(isSaveDisabled)
+                }
             }
         }
         .onAppear {

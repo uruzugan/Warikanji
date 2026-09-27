@@ -57,6 +57,40 @@ enum EventPlanningText: Int {
     case optional
     case allParticipants
     case overdue
+    case datePoll
+    case datePollDescription
+    case addDateOption
+    case noDateOptions
+    case responseDeadline
+    case finalChoice
+    case notFinalized
+    case dateOption
+    case newDateOption
+    case editDateOption
+    case yes
+    case no
+    case venuePlanning
+    case venueDescription
+    case addVenue
+    case noVenues
+    case venueName
+    case webURL
+    case priceNote
+    case selectVenue
+    case selected
+    case reservation
+    case reservationStatus
+    case planned
+    case requested
+    case confirmed
+    case cancelled
+    case confirmationNumber
+    case reservationDate
+    case partySize
+    case contactName
+    case cancellationDeadline
+    case clearReservation
+    case openLink
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -115,7 +149,41 @@ private let eventPlanningTexts: [[String]] = [
     ["部ごとの出欠", "Attendance by Part", "各环节出席情况", "各環節出席狀況", "순서별 참석", "Asistencia por parte", "Presença por etapa"],
     ["任意", "Optional", "可选", "選填", "선택", "Opcional", "Opcional"],
     ["全員", "Everyone", "所有人", "所有人", "전원", "Todos", "Todos"],
-    ["期限切れ", "Overdue", "已逾期", "已逾期", "기한 지남", "Vencida", "Atrasada"]
+    ["期限切れ", "Overdue", "已逾期", "已逾期", "기한 지남", "Vencida", "Atrasada"],
+    ["日程投票", "Date Poll", "日期投票", "日期投票", "일정 투표", "Votación de fecha", "Votação de data"],
+    ["候補日ごとの都合をまとめて確認", "Compare availability for each date option", "汇总确认各候选日期的时间", "彙整確認各候選日期的時間", "후보 날짜별 가능 여부 확인", "Compara la disponibilidad de cada fecha", "Compare a disponibilidade de cada data"],
+    ["候補日を追加", "Add Date Option", "添加候选日期", "新增候選日期", "후보 날짜 추가", "Añadir fecha", "Adicionar data"],
+    ["候補日はありません", "No date options yet", "暂无候选日期", "尚無候選日期", "후보 날짜가 없습니다", "Aún no hay fechas", "Ainda não há datas"],
+    ["回答期限", "Response Deadline", "回答期限", "回答期限", "응답 기한", "Fecha límite de respuesta", "Prazo de resposta"],
+    ["確定日程", "Final Date", "最终日期", "最終日期", "확정 일정", "Fecha final", "Data final"],
+    ["未確定", "Not Finalized", "未确定", "未確定", "미확정", "Sin decidir", "Não definida"],
+    ["候補日", "Date Option", "候选日期", "候選日期", "후보 날짜", "Fecha candidata", "Data candidata"],
+    ["新しい候補日", "New Date Option", "新候选日期", "新候選日期", "새 후보 날짜", "Nueva fecha", "Nova data"],
+    ["候補日を編集", "Edit Date Option", "编辑候选日期", "編輯候選日期", "후보 날짜 편집", "Editar fecha", "Editar data"],
+    ["参加可能", "Available", "可以参加", "可以參加", "참석 가능", "Disponible", "Disponível"],
+    ["参加不可", "Unavailable", "无法参加", "無法參加", "참석 불가", "No disponible", "Indisponível"],
+    ["店・場所候補", "Venue Candidates", "地点候选", "地點候選", "장소 후보", "Lugares candidatos", "Locais candidatos"],
+    ["候補への回答と予約内容をまとめて管理", "Manage venue votes and reservation details", "统一管理地点投票与预约信息", "統一管理地點投票與預約資訊", "장소 투표와 예약 정보 관리", "Gestiona votos y reservas", "Gerencie votos e reservas"],
+    ["候補を追加", "Add Venue", "添加候选地点", "新增候選地點", "장소 후보 추가", "Añadir lugar", "Adicionar local"],
+    ["候補はありません", "No venue candidates yet", "暂无候选地点", "尚無候選地點", "장소 후보가 없습니다", "Aún no hay lugares", "Ainda não há locais"],
+    ["店・場所名", "Venue Name", "地点名称", "地點名稱", "장소 이름", "Nombre del lugar", "Nome do local"],
+    ["Webリンク", "Web Link", "网页链接", "網頁連結", "웹 링크", "Enlace web", "Link da web"],
+    ["料金メモ", "Price Note", "价格备注", "價格備註", "가격 메모", "Nota de precio", "Nota de preço"],
+    ["この候補に決定", "Select This Venue", "选择此地点", "選擇此地點", "이 장소로 결정", "Elegir este lugar", "Escolher este local"],
+    ["決定済み", "Selected", "已选择", "已選擇", "선택됨", "Seleccionado", "Selecionado"],
+    ["予約情報", "Reservation", "预约信息", "預約資訊", "예약 정보", "Reserva", "Reserva"],
+    ["予約状態", "Reservation Status", "预约状态", "預約狀態", "예약 상태", "Estado de la reserva", "Status da reserva"],
+    ["予約予定", "Planned", "计划预约", "計畫預約", "예약 예정", "Planificada", "Planejada"],
+    ["予約依頼中", "Requested", "预约申请中", "預約申請中", "예약 요청 중", "Solicitada", "Solicitada"],
+    ["予約確定", "Confirmed", "预约已确认", "預約已確認", "예약 확정", "Confirmada", "Confirmada"],
+    ["キャンセル", "Cancelled", "已取消", "已取消", "취소됨", "Cancelada", "Cancelada"],
+    ["予約番号", "Confirmation Number", "预约编号", "預約編號", "예약 번호", "Número de confirmación", "Número de confirmação"],
+    ["予約日時", "Reservation Date", "预约日期时间", "預約日期時間", "예약 일시", "Fecha de reserva", "Data da reserva"],
+    ["予約人数", "Party Size", "预约人数", "預約人數", "예약 인원", "Número de personas", "Número de pessoas"],
+    ["予約者名", "Contact Name", "预约人姓名", "預約人姓名", "예약자 이름", "Nombre de contacto", "Nome do contato"],
+    ["キャンセル期限", "Cancellation Deadline", "取消期限", "取消期限", "취소 기한", "Límite de cancelación", "Prazo de cancelamento"],
+    ["予約情報を削除", "Clear Reservation", "删除预约信息", "刪除預約資訊", "예약 정보 삭제", "Borrar reserva", "Limpar reserva"],
+    ["リンクを開く", "Open Link", "打开链接", "開啟連結", "링크 열기", "Abrir enlace", "Abrir link"]
 ]
 
 extension AppLanguage {
@@ -175,6 +243,28 @@ extension EventTaskStatus {
         case .pending: return language.planningText(.pending)
         case .inProgress: return language.planningText(.inProgress)
         case .completed: return language.planningText(.completed)
+        }
+    }
+}
+
+extension CoordinationChoice {
+    func displayName(for language: AppLanguage) -> String {
+        switch self {
+        case .unanswered: return language.planningText(.unanswered)
+        case .yes: return language.planningText(.yes)
+        case .maybe: return language.planningText(.maybe)
+        case .no: return language.planningText(.no)
+        }
+    }
+}
+
+extension ReservationStatus {
+    func displayName(for language: AppLanguage) -> String {
+        switch self {
+        case .planned: return language.planningText(.planned)
+        case .requested: return language.planningText(.requested)
+        case .confirmed: return language.planningText(.confirmed)
+        case .cancelled: return language.planningText(.cancelled)
         }
     }
 }

@@ -406,6 +406,55 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var schedulePollSubtitle: String {
+        let count = event.planning.schedulePoll.options.count
+        if count == 0 { return language.planningText(.noDateOptions) }
+        if let finalizedId = event.planning.schedulePoll.finalizedOptionId,
+           let option = event.planning.schedulePoll.options.first(where: {
+               $0.id == finalizedId
+           }) {
+            return option.startAt.formatted(date: .abbreviated, time: .shortened)
+        }
+
+        switch language {
+        case .japanese: return "候補 \(count)件・未確定"
+        case .english: return "\(count) options · not finalized"
+        case .simplifiedChinese: return "\(count)个候选・未确定"
+        case .traditionalChinese: return "\(count)個候選・未確定"
+        case .korean: return "후보 \(count)개 · 미확정"
+        case .spanish: return "\(count) opciones · sin decidir"
+        case .portuguese: return "\(count) opções · não definida"
+        }
+    }
+
+    private var venueSubtitle: String {
+        if let reservation = event.planning.venuePlanning.reservation {
+            let venueName = reservation.venueName.isEmpty
+                ? language.planningText(.reservation)
+                : reservation.venueName
+            return "\(reservation.status.displayName(for: language)) · \(venueName)"
+        }
+        if let selectedId = event.planning.venuePlanning.selectedCandidateId,
+           let candidate = event.planning.venuePlanning.candidates.first(where: {
+               $0.id == selectedId
+           }) {
+            return "\(language.planningText(.selected)) · \(candidate.name)"
+        }
+
+        let count = event.planning.venuePlanning.candidates.count
+        if count == 0 { return language.planningText(.noVenues) }
+
+        switch language {
+        case .japanese: return "候補 \(count)件"
+        case .english: return "\(count) candidates"
+        case .simplifiedChinese: return "\(count)个候选"
+        case .traditionalChinese: return "\(count)個候選"
+        case .korean: return "후보 \(count)개"
+        case .spanish: return "\(count) lugares"
+        case .portuguese: return "\(count) locais"
+        }
+    }
+
     private var tasksSubtitle: String {
         let incomplete = event.planning.tasks.filter { $0.status != .completed }.count
         if event.planning.tasks.isEmpty { return language.planningText(.noTasks) }
@@ -453,6 +502,35 @@ struct EventDetailMenu: View {
                         attendanceSubtitle,
                         "person.crop.circle.badge.checkmark",
                         AppTheme.secondary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.schedulingPoll) {
+                NavigationLink {
+                    SchedulePollView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.datePoll),
+                        schedulePollSubtitle,
+                        "calendar.badge.questionmark",
+                        AppTheme.secondary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.venueCandidates)
+                || event.planning.features.contains(.reservations) {
+                NavigationLink {
+                    VenuePlanningView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.venuePlanning),
+                        venueSubtitle,
+                        "mappin.and.ellipse",
+                        AppTheme.success
                     )
                 }
                 .buttonStyle(.plain)

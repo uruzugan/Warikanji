@@ -69,4 +69,33 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertEqual(profile.homeCurrency, .jpy)
         XCTAssertEqual(profile.referenceCurrency, .jpy)
     }
+
+    func testPlanningSavedBeforeCoordinationGetsEmptyDefaults() throws {
+        let json = """
+        {
+          "formatVersion": 1,
+          "features": { "enabled": ["expenseTracking"] },
+          "access": {
+            "members": [],
+            "expenseApprovalRequired": false,
+            "joinApprovalRequired": false
+          },
+          "parts": [],
+          "participantResponses": [],
+          "tasks": [],
+          "activity": [],
+          "dismissedAssistantActionKeys": []
+        }
+        """
+
+        let planning = try JSONDecoder().decode(
+            EventPlanningState.self,
+            from: Data(json.utf8)
+        )
+
+        XCTAssertTrue(planning.schedulePoll.options.isEmpty)
+        XCTAssertTrue(planning.schedulePoll.responses.isEmpty)
+        XCTAssertTrue(planning.venuePlanning.candidates.isEmpty)
+        XCTAssertNil(planning.venuePlanning.reservation)
+    }
 }

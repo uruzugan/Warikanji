@@ -164,6 +164,121 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertEqual(event.expenses[1].partId, retainedPartId)
     }
 
+    func testRemovingScheduleOptionCleansResponsesAndFinalChoice() {
+        let participantId = UUID()
+        let removedOptionId = UUID()
+        let retainedOptionId = UUID()
+        var poll = EventSchedulePoll(
+            options: [
+                ScheduleOption(
+                    id: removedOptionId,
+                    startAt: Date(timeIntervalSince1970: 1_000)
+                ),
+                ScheduleOption(
+                    id: retainedOptionId,
+                    startAt: Date(timeIntervalSince1970: 2_000)
+                )
+            ],
+            responses: [
+                SchedulePollResponse(
+                    participantId: participantId,
+                    optionResponses: [
+                        ScheduleOptionResponse(
+                            optionId: removedOptionId,
+                            choice: .yes
+                        ),
+                        ScheduleOptionResponse(
+                            optionId: retainedOptionId,
+                            choice: .maybe
+                        )
+                    ]
+                )
+            ],
+            finalizedOptionId: removedOptionId
+        )
+
+        poll.removeOption(removedOptionId)
+
+        XCTAssertEqual(poll.options.map(\.id), [retainedOptionId])
+        XCTAssertEqual(
+            poll.responses[0].optionResponses.map(\.optionId),
+            [retainedOptionId]
+        )
+        XCTAssertNil(poll.finalizedOptionId)
+    }
+
+    func testRemovingParticipantCleansPollAndVenueVotes() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.meal.defaultFeatures,
+            schedulePoll: EventSchedulePoll(
+                responses: [SchedulePollResponse(participantId: participantId)]
+            ),
+            venuePlanning: EventVenuePlanning(
+                candidates: [
+                    VenueCandidate(
+                        name: "Cafe",
+                        votes: [
+                            VenueVote(
+                                participantId: participantId,
+                                choice: .yes
+                            )
+                        ]
+                    )
+                ]
+            )
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertTrue(planning.schedulePoll.responses.isEmpty)
+        XCTAssertTrue(planning.venuePlanning.candidates[0].votes.isEmpty)
+    }
+
+    func testDuplicateCoordinationResetsVotesAndReservation() {
+        let optionId = UUID()
+        let candidateId = UUID()
+        let participantId = UUID()
+        let planning = EventPlanningState(
+            features: EventType.meal.defaultFeatures,
+            schedulePoll: EventSchedulePoll(
+                options: [
+                    ScheduleOption(
+                        id: optionId,
+                        startAt: Date(timeIntervalSince1970: 1_000)
+                    )
+                ],
+                responses: [SchedulePollResponse(participantId: participantId)],
+                finalizedOptionId: optionId
+            ),
+            venuePlanning: EventVenuePlanning(
+                candidates: [
+                    VenueCandidate(
+                        id: candidateId,
+                        name: "Cafe",
+                        votes: [
+                            VenueVote(participantId: participantId, choice: .yes)
+                        ]
+                    )
+                ],
+                selectedCandidateId: candidateId,
+                reservation: EventReservation(venueName: "Cafe")
+            )
+        )
+
+        let copy = planning.duplicated(using: [:], partMap: [:])
+
+        XCTAssertEqual(copy.schedulePoll.options.count, 1)
+        XCTAssertNotEqual(copy.schedulePoll.options[0].id, optionId)
+        XCTAssertTrue(copy.schedulePoll.responses.isEmpty)
+        XCTAssertNil(copy.schedulePoll.finalizedOptionId)
+        XCTAssertEqual(copy.venuePlanning.candidates.count, 1)
+        XCTAssertNotEqual(copy.venuePlanning.candidates[0].id, candidateId)
+        XCTAssertTrue(copy.venuePlanning.candidates[0].votes.isEmpty)
+        XCTAssertNil(copy.venuePlanning.selectedCandidateId)
+        XCTAssertNil(copy.venuePlanning.reservation)
+    }
+
     func testAssistantPrioritizesOverdueTaskAndUnpaidTransfer() {
         let participants = [
             EventParticipant(name: "A"),

@@ -91,6 +91,149 @@ enum EventProgressAssistant {
             }
         }
 
+        if event.planning.features.contains(.schedulingPoll) {
+            let poll = event.planning.schedulePoll
+
+            if poll.options.isEmpty {
+                actions.append(
+                    action(
+                        id: "schedule.options.empty",
+                        priority: .normal,
+                        symbol: "calendar.badge.plus",
+                        title: language.text(
+                            ja: "候補日を追加", en: "Add date options",
+                            zhHans: "添加候选日期", zhHant: "新增候選日期",
+                            ko: "후보 날짜 추가", es: "Añade fechas",
+                            pt: "Adicione datas"
+                        ),
+                        detail: language.text(
+                            ja: "日程投票を始める候補日を設定します。",
+                            en: "Set the options needed to start a date poll.",
+                            zhHans: "设置开始日期投票所需的候选日期。",
+                            zhHant: "設定開始日期投票所需的候選日期。",
+                            ko: "일정 투표를 시작할 후보 날짜를 설정하세요.",
+                            es: "Configura las opciones para iniciar la votación.",
+                            pt: "Configure as opções para iniciar a votação."
+                        ),
+                        destination: "schedule"
+                    )
+                )
+            } else if poll.finalizedOptionId == nil {
+                let answeredIds = Set(
+                    poll.responses.filter { response in
+                        response.optionResponses.contains {
+                            $0.choice != .unanswered
+                        }
+                    }.map(\.participantId)
+                )
+                let unanswered = namedParticipants.filter {
+                    !answeredIds.contains($0.id)
+                }.count
+
+                if unanswered > 0 {
+                    let deadlinePassed = poll.responseDeadline.map { $0 < now } ?? false
+                    actions.append(
+                        action(
+                            id: "schedule.responses.missing",
+                            priority: deadlinePassed ? .critical : .high,
+                            symbol: "calendar.badge.questionmark",
+                            title: language.text(
+                                ja: "日程回答を確認", en: "Check date poll responses",
+                                zhHans: "确认日期投票回答", zhHant: "確認日期投票回答",
+                                ko: "일정 응답 확인", es: "Revisa las respuestas",
+                                pt: "Verifique as respostas"
+                            ),
+                            detail: countText(
+                                unanswered,
+                                language: language,
+                                ja: "未回答：%d人", en: "%d people have not answered",
+                                zhHans: "%d人尚未回答", zhHant: "%d人尚未回答",
+                                ko: "미응답 %d명", es: "%d personas sin responder",
+                                pt: "%d pessoas não responderam"
+                            ),
+                            destination: "schedule"
+                        )
+                    )
+                }
+            }
+        }
+
+        if event.planning.features.contains(.venueCandidates),
+           event.planning.venuePlanning.candidates.isEmpty {
+            actions.append(
+                action(
+                    id: "venue.candidates.empty",
+                    priority: .normal,
+                    symbol: "mappin.and.ellipse",
+                    title: language.text(
+                        ja: "店・場所候補を追加", en: "Add venue candidates",
+                        zhHans: "添加地点候选", zhHant: "新增地點候選",
+                        ko: "장소 후보 추가", es: "Añade lugares",
+                        pt: "Adicione locais"
+                    ),
+                    detail: language.text(
+                        ja: "候補への回答と予約準備をまとめられます。",
+                        en: "Collect responses and prepare reservation details.",
+                        zhHans: "汇总候选地点的回答并准备预约。",
+                        zhHant: "彙整候選地點的回答並準備預約。",
+                        ko: "장소 응답과 예약 준비를 한곳에서 관리하세요.",
+                        es: "Reúne respuestas y prepara la reserva.",
+                        pt: "Reúna respostas e prepare a reserva."
+                    ),
+                    destination: "venue"
+                )
+            )
+        }
+
+        if event.planning.features.contains(.reservations) {
+            let venuePlanning = event.planning.venuePlanning
+            if venuePlanning.reservation == nil,
+               venuePlanning.selectedCandidateId != nil {
+                actions.append(
+                    action(
+                        id: "reservation.missing",
+                        priority: .high,
+                        symbol: "checkmark.seal",
+                        title: language.text(
+                            ja: "予約内容を記録", en: "Record reservation details",
+                            zhHans: "记录预约信息", zhHant: "記錄預約資訊",
+                            ko: "예약 정보 기록", es: "Registra la reserva",
+                            pt: "Registre a reserva"
+                        ),
+                        detail: language.text(
+                            ja: "決定した場所の予約状況と期限を確認します。",
+                            en: "Track booking status and cancellation deadlines.",
+                            zhHans: "确认已选地点的预约状态和取消期限。",
+                            zhHant: "確認已選地點的預約狀態和取消期限。",
+                            ko: "선택한 장소의 예약 상태와 취소 기한을 확인하세요.",
+                            es: "Controla el estado y el límite de cancelación.",
+                            pt: "Acompanhe o status e o prazo de cancelamento."
+                        ),
+                        destination: "venue"
+                    )
+                )
+            } else if let reservation = venuePlanning.reservation,
+                      let deadline = reservation.cancellationDeadline,
+                      reservation.status != .cancelled,
+                      deadline.timeIntervalSince(now) < 86_400 {
+                actions.append(
+                    action(
+                        id: "reservation.cancellationDeadline",
+                        priority: .critical,
+                        symbol: "hourglass.badge.exclamationmark",
+                        title: language.text(
+                            ja: "キャンセル期限を確認", en: "Check cancellation deadline",
+                            zhHans: "确认取消期限", zhHant: "確認取消期限",
+                            ko: "취소 기한 확인", es: "Revisa el límite de cancelación",
+                            pt: "Verifique o prazo de cancelamento"
+                        ),
+                        detail: deadline.formatted(date: .abbreviated, time: .shortened),
+                        destination: "venue"
+                    )
+                )
+            }
+        }
+
         if event.planning.features.contains(.multipleParts), event.planning.parts.isEmpty {
             actions.append(
                 action(

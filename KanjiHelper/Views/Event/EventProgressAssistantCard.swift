@@ -9,7 +9,7 @@ struct EventProgressAssistantCard: View {
             .filter {
                 [
                     "participants", "attendance", "parts", "tasks",
-                    "settlement", "payments"
+                    "schedule", "venue", "settlement", "payments"
                 ].contains($0.destinationKey)
             }
             .prefix(3)
@@ -66,6 +66,20 @@ struct EventProgressAssistantCard: View {
         case "tasks":
             NavigationLink {
                 EventTaskListView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "schedule":
+            NavigationLink {
+                SchedulePollView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "venue":
+            NavigationLink {
+                VenuePlanningView(eventId: event.id)
             } label: {
                 actionRow(action)
             }

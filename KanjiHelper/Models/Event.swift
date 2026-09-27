@@ -127,6 +127,12 @@ struct Event: Identifiable, Codable, Equatable {
         ids.formUnion(planning.parts.flatMap(\.participantIds))
         ids.formUnion(planning.tasks.flatMap(\.assigneeParticipantIds))
         ids.formUnion(planning.access.members.compactMap(\.participantId))
+        ids.formUnion(planning.schedulePoll.responses.map(\.participantId))
+        ids.formUnion(
+            planning.venuePlanning.candidates.flatMap {
+                $0.votes.map(\.participantId)
+            }
+        )
 
         return ids
     }
