@@ -84,26 +84,30 @@ struct EventDetailSummary: View {
                     AppTheme.primary
                 )
 
-                Divider().frame(height: 46)
+                if event.planning.features.contains(.expenseTracking) {
+                    Divider().frame(height: 46)
 
-                item(
-                    language.detail(.totalExpenses),
-                    event.currency.formatted(minorUnits: event.totalExpenseAmount),
-                    "banknote.fill",
-                    AppTheme.success
-                )
+                    item(
+                        language.detail(.totalExpenses),
+                        event.currency.formatted(minorUnits: event.totalExpenseAmount),
+                        "banknote.fill",
+                        AppTheme.success
+                    )
+                }
 
-                Divider().frame(height: 46)
+                if event.planning.features.contains(.settlement) {
+                    Divider().frame(height: 46)
 
-                item(
-                    language.detail(.settlementStatus),
-                    statusText,
-                    statusSymbol,
-                    statusColor
-                )
+                    item(
+                        language.detail(.settlementStatus),
+                        statusText,
+                        statusSymbol,
+                        statusColor
+                    )
+                }
             }
 
-            if needsReferenceConversion {
+            if event.planning.features.contains(.expenseTracking), needsReferenceConversion {
                 Divider()
                 referenceConversionRow
             }
@@ -394,49 +398,53 @@ struct EventDetailMenu: View {
             }
             .buttonStyle(.plain)
 
-            NavigationLink {
-                ExpenseListView(
-                    eventId: eventId
-                )
-            } label: {
-                card(
-                    language.detail(.expenses),
-                    expenseSubtitle,
-                    "banknote.fill",
-                    AppTheme.success
-                )
+            if event.planning.features.contains(.expenseTracking) {
+                NavigationLink {
+                    ExpenseListView(
+                        eventId: eventId
+                    )
+                } label: {
+                    card(
+                        language.detail(.expenses),
+                        expenseSubtitle,
+                        "banknote.fill",
+                        AppTheme.success
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
-            NavigationLink {
-                SettlementResultView(
-                    eventId: eventId
-                )
-            } label: {
-                card(
-                    language.detail(.settlement),
-                    event.expenses.isEmpty
-                        ? language.detail(.addExpensesToCalculate)
-                        : language.detail(.checkShares),
-                    "arrow.left.arrow.right.circle.fill",
-                    AppTheme.secondary
-                )
-            }
-            .buttonStyle(.plain)
+            if event.planning.features.contains(.settlement) {
+                NavigationLink {
+                    SettlementResultView(
+                        eventId: eventId
+                    )
+                } label: {
+                    card(
+                        language.detail(.settlement),
+                        event.expenses.isEmpty
+                            ? language.detail(.addExpensesToCalculate)
+                            : language.detail(.checkShares),
+                        "arrow.left.arrow.right.circle.fill",
+                        AppTheme.secondary
+                    )
+                }
+                .buttonStyle(.plain)
 
-            NavigationLink {
-                PaymentManagementView(
-                    eventId: eventId
-                )
-            } label: {
-                card(
-                    language.detail(.payments),
-                    paymentSubtitle,
-                    "checkmark.seal.fill",
-                    AppTheme.primary
-                )
+                NavigationLink {
+                    PaymentManagementView(
+                        eventId: eventId
+                    )
+                } label: {
+                    card(
+                        language.detail(.payments),
+                        paymentSubtitle,
+                        "checkmark.seal.fill",
+                        AppTheme.primary
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 

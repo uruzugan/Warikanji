@@ -13,6 +13,7 @@ struct Event: Identifiable, Codable, Equatable {
     var participants: [EventParticipant]
     var expenses: [Expense]
     var transfers: [Transfer]
+    var planning: EventPlanningState
 
     init(
         id: UUID = UUID(),
@@ -26,7 +27,8 @@ struct Event: Identifiable, Codable, Equatable {
         expectedParticipantCount: Int = 1,
         participants: [EventParticipant] = [],
         expenses: [Expense] = [],
-        transfers: [Transfer] = []
+        transfers: [Transfer] = [],
+        planning: EventPlanningState? = nil
     ) {
         self.id = id
         self.title = title
@@ -40,12 +42,13 @@ struct Event: Identifiable, Codable, Equatable {
         self.participants = participants
         self.expenses = expenses
         self.transfers = transfers
+        self.planning = planning ?? .initial(for: eventType)
         normalizeParticipantSlots()
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, title, date, endDate, location, memo, eventType, currency
-        case expectedParticipantCount, participants, expenses, transfers
+        case expectedParticipantCount, participants, expenses, transfers, planning
     }
 
     init(from decoder: Decoder) throws {
@@ -65,6 +68,8 @@ struct Event: Identifiable, Codable, Equatable {
         participants = try container.decodeIfPresent([EventParticipant].self, forKey: .participants) ?? []
         expenses = try container.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
         transfers = try container.decodeIfPresent([Transfer].self, forKey: .transfers) ?? []
+        planning = try container.decodeIfPresent(EventPlanningState.self, forKey: .planning)
+            ?? .initial(for: eventType)
 
         let savedCount = try container.decodeIfPresent(Int.self, forKey: .expectedParticipantCount)
         expectedParticipantCount = max(1, savedCount ?? participants.count, participants.count)
@@ -117,6 +122,11 @@ struct Event: Identifiable, Codable, Equatable {
 
             ids.formUnion(expense.remainderParticipantIds)
         }
+
+        ids.formUnion(planning.participantResponses.map(\.participantId))
+        ids.formUnion(planning.parts.flatMap(\.participantIds))
+        ids.formUnion(planning.tasks.flatMap(\.assigneeParticipantIds))
+        ids.formUnion(planning.access.members.compactMap(\.participantId))
 
         return ids
     }

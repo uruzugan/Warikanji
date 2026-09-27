@@ -6,6 +6,9 @@ extension EventViewModel {
         let participantMap = Dictionary(
             uniqueKeysWithValues: source.participants.map { ($0.id, UUID()) }
         )
+        let partMap = Dictionary(
+            uniqueKeysWithValues: source.planning.parts.map { ($0.id, UUID()) }
+        )
 
         let participants = source.participants.map {
             EventParticipant(id: participantMap[$0.id]!, name: $0.name)
@@ -35,7 +38,8 @@ extension EventViewModel {
                 conditions: conditions,
                 rounding: expense.rounding,
                 remainderParticipantIds: expense.remainderParticipantIds.compactMap { participantMap[$0] },
-                date: expense.date
+                date: expense.date,
+                partId: expense.partId.flatMap { partMap[$0] }
             )
         }
 
@@ -50,7 +54,11 @@ extension EventViewModel {
             expectedParticipantCount: source.expectedParticipantCount,
             participants: participants,
             expenses: expenses,
-            transfers: []
+            transfers: [],
+            planning: source.planning.duplicated(
+                using: participantMap,
+                partMap: partMap
+            )
         )
 
         addEvent(copy)

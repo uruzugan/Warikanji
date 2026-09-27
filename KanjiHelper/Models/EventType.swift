@@ -8,6 +8,15 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
     case bbq = "BBQ"
     case camp = "合宿"
     case party = "パーティー"
+    case liveEvent = "ライブ・観戦"
+    case reunion = "同窓会"
+    case studySession = "勉強会・作業会"
+    case gameNight = "ゲーム会"
+    case birthday = "誕生日会"
+    case farewell = "送別会"
+    case weddingAfterParty = "結婚式二次会"
+    case family = "家族イベント"
+    case clubSports = "サークル・部活"
     case other = "その他"
 
     var id: String { rawValue }
@@ -21,6 +30,15 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
         case .bbq: return "flame.fill"
         case .camp: return "tent.fill"
         case .party: return "party.popper.fill"
+        case .liveEvent: return "ticket.fill"
+        case .reunion: return "person.3.fill"
+        case .studySession: return "book.fill"
+        case .gameNight: return "gamecontroller.fill"
+        case .birthday: return "birthday.cake.fill"
+        case .farewell: return "hands.clap.fill"
+        case .weddingAfterParty: return "heart.fill"
+        case .family: return "figure.2.and.child.holdinghands"
+        case .clubSports: return "sportscourt.fill"
         case .other: return "calendar"
         }
     }
@@ -96,6 +114,69 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
                 pt: "Festa"
             )
 
+        case .liveEvent:
+            return language.text(
+                ja: "ライブ・観戦", en: "Live Event",
+                zhHans: "演出・观赛", zhHant: "表演・觀賽",
+                ko: "공연·관람", es: "Evento en vivo", pt: "Evento ao vivo"
+            )
+
+        case .reunion:
+            return language.text(
+                ja: "同窓会", en: "Reunion",
+                zhHans: "同学会", zhHant: "同學會",
+                ko: "동창회", es: "Reencuentro", pt: "Reencontro"
+            )
+
+        case .studySession:
+            return language.text(
+                ja: "勉強会・作業会", en: "Study Session",
+                zhHans: "学习・工作会", zhHant: "學習・工作會",
+                ko: "스터디·작업 모임", es: "Sesión de estudio", pt: "Sessão de estudo"
+            )
+
+        case .gameNight:
+            return language.text(
+                ja: "ゲーム会", en: "Game Night",
+                zhHans: "游戏聚会", zhHant: "遊戲聚會",
+                ko: "게임 모임", es: "Noche de juegos", pt: "Noite de jogos"
+            )
+
+        case .birthday:
+            return language.text(
+                ja: "誕生日会", en: "Birthday",
+                zhHans: "生日会", zhHant: "生日會",
+                ko: "생일 파티", es: "Cumpleaños", pt: "Aniversário"
+            )
+
+        case .farewell:
+            return language.text(
+                ja: "送別会", en: "Farewell Party",
+                zhHans: "欢送会", zhHant: "歡送會",
+                ko: "송별회", es: "Despedida", pt: "Despedida"
+            )
+
+        case .weddingAfterParty:
+            return language.text(
+                ja: "結婚式二次会", en: "Wedding After-party",
+                zhHans: "婚礼二次会", zhHant: "婚禮二次會",
+                ko: "결혼식 2차", es: "Fiesta posboda", pt: "Festa pós-casamento"
+            )
+
+        case .family:
+            return language.text(
+                ja: "家族イベント", en: "Family Event",
+                zhHans: "家庭活动", zhHant: "家庭活動",
+                ko: "가족 행사", es: "Evento familiar", pt: "Evento familiar"
+            )
+
+        case .clubSports:
+            return language.text(
+                ja: "サークル・部活", en: "Club & Sports",
+                zhHans: "社团・运动队", zhHant: "社團・運動隊",
+                ko: "동아리·부활동", es: "Club y deporte", pt: "Clube e esporte"
+            )
+
         case .other:
             return language.text(
                 ja: "その他",
@@ -157,7 +238,9 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
                 pt: "Ajuste a divisão conforme hospedagem, transporte e duração da viagem."
             )
 
-        case .bbq, .camp, .party, .other:
+        case .bbq, .camp, .party, .liveEvent, .reunion, .studySession,
+             .gameNight, .birthday, .farewell, .weddingAfterParty,
+             .family, .clubSports, .other:
             return language.text(
                 ja: "イベントの内容に合わせて、負担比率を自由に調整できます。",
                 en: "Adjust each person's share to match the event.",
@@ -168,9 +251,5 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
                 pt: "Ajuste livremente a parte de cada pessoa conforme o evento."
             )
         }
-    }
-
-    var customSplitDescription: String {
-        customSplitDescription(for: .japanese)
     }
 }

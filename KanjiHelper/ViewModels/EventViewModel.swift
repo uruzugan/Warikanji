@@ -88,6 +88,11 @@ final class EventViewModel: ObservableObject {
             updated.participants.count,
             1
         )
+        updated.planning.recordActivity(
+            targetType: "event",
+            targetId: updated.id,
+            actionKey: "event.created"
+        )
 
         events.append(updated)
         guard saveEvents() else {
@@ -108,6 +113,11 @@ final class EventViewModel: ObservableObject {
             updated.expectedParticipantCount,
             updated.participants.count,
             1
+        )
+        updated.planning.recordActivity(
+            targetType: "event",
+            targetId: updated.id,
+            actionKey: "event.updated"
         )
 
         events[index] = updated
@@ -182,6 +192,11 @@ final class EventViewModel: ObservableObject {
 
         let previousEvent = events[index]
         events[index].participants.append(participant)
+        events[index].planning.recordActivity(
+            targetType: "participant",
+            targetId: participant.id,
+            actionKey: "participant.added"
+        )
         events[index].expectedParticipantCount = max(
             events[index].expectedParticipantCount,
             events[index].participants.count,
@@ -204,6 +219,11 @@ final class EventViewModel: ObservableObject {
 
         let previousEvent = events[eventIndex]
         events[eventIndex].participants[participantIndex] = participant
+        events[eventIndex].planning.recordActivity(
+            targetType: "participant",
+            targetId: participant.id,
+            actionKey: "participant.updated"
+        )
         if !saveEvents() {
             events[eventIndex] = previousEvent
         }
@@ -215,6 +235,12 @@ final class EventViewModel: ObservableObject {
 
         let previousEvent = events[eventIndex]
         events[eventIndex].participants.removeAll { $0.id == participantId }
+        events[eventIndex].planning.removeParticipant(participantId)
+        events[eventIndex].planning.recordActivity(
+            targetType: "participant",
+            targetId: participantId,
+            actionKey: "participant.removed"
+        )
         events[eventIndex].transfers = []
         prepareRandomOrders(at: eventIndex)
         if !saveEvents() {
@@ -227,7 +253,21 @@ final class EventViewModel: ObservableObject {
               let eventIndex = indexOfEvent(eventId) else { return }
 
         let previousEvent = events[eventIndex]
-        events[eventIndex].participants.remove(atOffsets: offsets)
+        let validOffsets = IndexSet(offsets.filter {
+            events[eventIndex].participants.indices.contains($0)
+        })
+        let removedParticipantIds = validOffsets.map {
+            events[eventIndex].participants[$0].id
+        }
+        events[eventIndex].participants.remove(atOffsets: validOffsets)
+        removedParticipantIds.forEach {
+            events[eventIndex].planning.removeParticipant($0)
+            events[eventIndex].planning.recordActivity(
+                targetType: "participant",
+                targetId: $0,
+                actionKey: "participant.removed"
+            )
+        }
         events[eventIndex].transfers = []
         prepareRandomOrders(at: eventIndex)
         if !saveEvents() {

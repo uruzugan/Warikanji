@@ -15,6 +15,7 @@ struct EventEditView: View {
     @State private var location = ""
     @State private var memo = ""
     @State private var participantCount = 1
+    @State private var enabledFeatures: Set<EventFeature> = []
     @State private var hasLoaded = false
     @State private var showDateRangeWarning = false
 
@@ -60,6 +61,11 @@ struct EventEditView: View {
                     eventInfoCard
                     if !expensesOutsideSelectedPeriod.isEmpty { dateRangeWarningCard }
                     typeCard
+                    EventFeatureSummaryCard(
+                        enabledFeatures: $enabledFeatures,
+                        eventType: eventType,
+                        language: language
+                    )
                     participantCard
                     memoCard
                     saveButton
@@ -457,6 +463,7 @@ struct EventEditView: View {
         location = event.location
         memo = event.memo
         participantCount = max(event.expectedParticipantCount, event.participants.count, 1)
+        enabledFeatures = event.planning.features.enabled
         hasLoaded = true
     }
 
@@ -479,6 +486,7 @@ struct EventEditView: View {
         updated.endDate = max(endDate, date)
         updated.location = location.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.memo = memo.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.planning.features.enabled = enabledFeatures
         updated.setParticipantCount(participantCount)
 
         if viewModel.updateEvent(updated) {

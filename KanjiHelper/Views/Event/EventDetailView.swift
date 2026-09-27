@@ -48,6 +48,7 @@ struct EventDetailView: View {
 
                 EventDetailHero(event: event)
                 EventDetailSummary(event: event)
+                EventProgressAssistantCard(event: event, language: language)
 
                 EventDetailInfo(event: event) {
                     guard !isLocked else { return }
@@ -165,10 +166,12 @@ struct EventDetailView: View {
                     Label(t("イベントを編集", "Edit Event", "编辑活动", "編輯活動", "이벤트 편집", "Editar evento", "Editar evento"), systemImage: "pencil")
                 }
 
-                Button { isShowingLockConfirmation = true } label: {
-                    Label(t("精算を確定", "Finalize Settlement", "确定结算", "確定結算", "정산 확정", "Finalizar liquidación", "Finalizar acerto"), systemImage: "lock.fill")
+                if event.planning.features.contains(.settlement) {
+                    Button { isShowingLockConfirmation = true } label: {
+                        Label(t("精算を確定", "Finalize Settlement", "确定结算", "確定結算", "정산 확정", "Finalizar liquidación", "Finalizar acerto"), systemImage: "lock.fill")
+                    }
+                    .disabled(!canLock(event))
                 }
-                .disabled(!canLock(event))
 
                 Button(role: .destructive) {
                     isShowingDeleteConfirmation = true

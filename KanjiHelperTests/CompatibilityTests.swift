@@ -26,6 +26,9 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertEqual(event.expectedParticipantCount, 1)
         XCTAssertTrue(event.location.isEmpty)
         XCTAssertTrue(event.memo.isEmpty)
+        XCTAssertEqual(event.planning.formatVersion, 1)
+        XCTAssertTrue(event.planning.features.contains(.expenseTracking))
+        XCTAssertTrue(event.planning.features.contains(.settlement))
     }
 
     func testLegacyExpenseGetsReceiptAndDateDefaults() throws {
@@ -46,6 +49,7 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertTrue(expense.conditions.isEmpty)
         XCTAssertTrue(expense.receiptImages.isEmpty)
         XCTAssertNil(expense.date)
+        XCTAssertNil(expense.partId)
     }
 
     func testLegacyProfileKeepsReferenceCurrencyInSync() throws {

@@ -38,6 +38,11 @@ extension EventViewModel {
         guard canEdit(eventId), let index = indexOfEvent(eventId) else { return }
         let previousEvent = events[index]
         events[index].transfers = transfers
+        events[index].planning.recordActivity(
+            targetType: "settlement",
+            targetId: eventId,
+            actionKey: "settlement.updated"
+        )
         if !saveEvents() {
             events[index] = previousEvent
         }
@@ -50,6 +55,11 @@ extension EventViewModel {
 
         let previousEvent = events[eventIndex]
         events[eventIndex].transfers[transferIndex].isPaid = isPaid
+        events[eventIndex].planning.recordActivity(
+            targetType: "transfer",
+            targetId: transferId,
+            actionKey: isPaid ? "payment.markedPaid" : "payment.markedUnpaid"
+        )
         if !saveEvents() {
             events[eventIndex] = previousEvent
         }

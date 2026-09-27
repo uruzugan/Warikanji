@@ -13,6 +13,11 @@ extension EventViewModel {
 
         events[index].expenses.append(expense)
         events[index].transfers = []
+        events[index].planning.recordActivity(
+            targetType: "expense",
+            targetId: expense.id,
+            actionKey: "expense.added"
+        )
         guard saveEvents() else {
             events[index] = previousEvent
             return false
@@ -42,6 +47,11 @@ extension EventViewModel {
 
         prepareRandomOrder(for: &updated, participants: events[eventIndex].participants)
         events[eventIndex].expenses[expenseIndex] = updated
+        events[eventIndex].planning.recordActivity(
+            targetType: "expense",
+            targetId: updated.id,
+            actionKey: "expense.updated"
+        )
 
         if calculationChanged || old.payerId != updated.payerId {
             events[eventIndex].transfers = []
@@ -83,6 +93,11 @@ extension EventViewModel {
 
         if changed {
             events[eventIndex].transfers = []
+            events[eventIndex].planning.recordActivity(
+                targetType: "expense",
+                targetId: expense.id,
+                actionKey: "expense.splitUpdated"
+            )
         }
 
         if !saveEvents() {
@@ -100,6 +115,11 @@ extension EventViewModel {
         let previousEvent = events[eventIndex]
         events[eventIndex].expenses.remove(at: expenseIndex)
         events[eventIndex].transfers = []
+        events[eventIndex].planning.recordActivity(
+            targetType: "expense",
+            targetId: expense.id,
+            actionKey: "expense.removed"
+        )
 
         guard saveEvents() else {
             events[eventIndex] = previousEvent
@@ -124,6 +144,13 @@ extension EventViewModel {
         let previousEvent = events[eventIndex]
         events[eventIndex].expenses.remove(atOffsets: validOffsets)
         events[eventIndex].transfers = []
+        deletingExpenses.forEach {
+            events[eventIndex].planning.recordActivity(
+                targetType: "expense",
+                targetId: $0.id,
+                actionKey: "expense.removed"
+            )
+        }
 
         guard saveEvents() else {
             events[eventIndex] = previousEvent

@@ -24,8 +24,14 @@ extension EventViewModel {
             changed = true
         }
 
-        if changed, !saveEvents() {
-            events[eventIndex] = previousEvent
+        if changed {
+            events[eventIndex].planning.recordActivity(
+                targetType: "participant",
+                actionKey: "participant.namesUpdated"
+            )
+            if !saveEvents() {
+                events[eventIndex] = previousEvent
+            }
         }
     }
 
@@ -63,6 +69,12 @@ extension EventViewModel {
 
         let previousEvent = events[eventIndex]
         events[eventIndex].participants.remove(at: participantIndex)
+        events[eventIndex].planning.removeParticipant(participantId)
+        events[eventIndex].planning.recordActivity(
+            targetType: "participant",
+            targetId: participantId,
+            actionKey: "participant.removed"
+        )
 
         for i in events[eventIndex].expenses.indices {
             events[eventIndex].expenses[i].conditions.removeAll { $0.participantId == participantId }

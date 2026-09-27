@@ -100,6 +100,7 @@ struct Expense: Identifiable, Codable, Equatable {
     var remainderParticipantIds: [UUID]
     var receiptImageFileNames: [String]?
     var date: Date?
+    var partId: UUID?
 
     var receiptImages: [String] { receiptImageFileNames ?? [] }
 
@@ -127,7 +128,8 @@ struct Expense: Identifiable, Codable, Equatable {
         rounding: SettlementRounding = .exact,
         remainderParticipantIds: [UUID] = [],
         receiptImageFileNames: [String]? = nil,
-        date: Date? = nil
+        date: Date? = nil,
+        partId: UUID? = nil
     ) {
         self.id = id
         self.title = title
@@ -140,11 +142,12 @@ struct Expense: Identifiable, Codable, Equatable {
         self.remainderParticipantIds = remainderParticipantIds
         self.receiptImageFileNames = receiptImageFileNames
         self.date = date
+        self.partId = partId
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, title, category, amount, payerId, splitMethod, conditions
-        case rounding, remainderParticipantIds, receiptImageFileNames, date
+        case rounding, remainderParticipantIds, receiptImageFileNames, date, partId
     }
 
     init(from decoder: Decoder) throws {
@@ -161,5 +164,6 @@ struct Expense: Identifiable, Codable, Equatable {
         remainderParticipantIds = try container.decodeIfPresent([UUID].self, forKey: .remainderParticipantIds) ?? []
         receiptImageFileNames = try container.decodeIfPresent([String].self, forKey: .receiptImageFileNames)
         date = try container.decodeIfPresent(Date.self, forKey: .date)
+        partId = try container.decodeIfPresent(UUID.self, forKey: .partId)
     }
 }
