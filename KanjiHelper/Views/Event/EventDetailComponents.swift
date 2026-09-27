@@ -455,6 +455,27 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var firstDrinkSubtitle: String {
+        let answeredIds = Set(
+            event.planning.firstDrinkPlan.selections
+                .filter(\.isAnswered)
+                .map(\.participantId)
+        )
+        let answered = event.participants.filter {
+            answeredIds.contains($0.id)
+        }.count
+
+        switch language {
+        case .japanese: return "回答済み \(answered) / \(event.participants.count)人"
+        case .english: return "\(answered) / \(event.participants.count) answered"
+        case .simplifiedChinese: return "已回答 \(answered) / \(event.participants.count) 人"
+        case .traditionalChinese: return "已回答 \(answered) / \(event.participants.count) 人"
+        case .korean: return "응답 \(answered) / \(event.participants.count)명"
+        case .spanish: return "\(answered) / \(event.participants.count) respondieron"
+        case .portuguese: return "\(answered) / \(event.participants.count) responderam"
+        }
+    }
+
     private var tasksSubtitle: String {
         let incompleteTasks = event.planning.tasks.filter {
             $0.status != .completed
@@ -576,6 +597,20 @@ struct EventDetailMenu: View {
                         venueSubtitle,
                         "mappin.and.ellipse",
                         AppTheme.success
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.firstDrink) {
+                NavigationLink {
+                    FirstDrinkView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.firstDrinkTitle),
+                        firstDrinkSubtitle,
+                        "wineglass.fill",
+                        AppTheme.warning
                     )
                 }
                 .buttonStyle(.plain)

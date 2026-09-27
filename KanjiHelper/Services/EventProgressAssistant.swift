@@ -234,6 +234,68 @@ enum EventProgressAssistant {
             }
         }
 
+        if event.planning.features.contains(.firstDrink) {
+            let plan = event.planning.firstDrinkPlan
+            if plan.options.count < 2 {
+                actions.append(
+                    action(
+                        id: "firstDrink.options.missing",
+                        priority: .normal,
+                        symbol: "wineglass",
+                        title: language.text(
+                            ja: "ドリンク候補を追加", en: "Add drink options",
+                            zhHans: "添加饮品选项", zhHant: "新增飲品選項",
+                            ko: "음료 후보 추가", es: "Añade opciones de bebida",
+                            pt: "Adicione opções de bebida"
+                        ),
+                        detail: language.text(
+                            ja: "第1・第2希望を選べるように2件以上登録します。",
+                            en: "Add at least two drinks for first and second choices.",
+                            zhHans: "请至少添加两种饮品，以便选择第一和第二志愿。",
+                            zhHant: "請至少新增兩種飲品，以便選擇第一和第二志願。",
+                            ko: "1·2순위를 고를 수 있도록 음료를 2개 이상 추가하세요.",
+                            es: "Añade al menos dos bebidas para la primera y segunda opción.",
+                            pt: "Adicione ao menos duas bebidas para a primeira e segunda opção."
+                        ),
+                        destination: "firstDrink"
+                    )
+                )
+            } else {
+                let answeredIds = Set(
+                    plan.selections.filter(\.isAnswered).map(\.participantId)
+                )
+                let unansweredCount = namedParticipants.filter {
+                    !answeredIds.contains($0.id)
+                }.count
+
+                if unansweredCount > 0 {
+                    let deadlinePassed = plan.responseDeadline.map { $0 < now } ?? false
+                    actions.append(
+                        action(
+                            id: "firstDrink.responses.missing",
+                            priority: deadlinePassed ? .critical : .high,
+                            symbol: "wineglass.fill",
+                            title: language.text(
+                                ja: "一杯目の回答を確認", en: "Check first-drink choices",
+                                zhHans: "确认第一杯饮品选择", zhHant: "確認第一杯飲品選擇",
+                                ko: "첫 잔 응답 확인", es: "Revisa las primeras bebidas",
+                                pt: "Verifique as primeiras bebidas"
+                            ),
+                            detail: countText(
+                                unansweredCount,
+                                language: language,
+                                ja: "未回答：%d人", en: "%d people have not answered",
+                                zhHans: "%d人尚未回答", zhHant: "%d人尚未回答",
+                                ko: "미응답 %d명", es: "%d personas sin responder",
+                                pt: "%d pessoas não responderam"
+                            ),
+                            destination: "firstDrink"
+                        )
+                    )
+                }
+            }
+        }
+
         if event.planning.features.contains(.multipleParts), event.planning.parts.isEmpty {
             actions.append(
                 action(

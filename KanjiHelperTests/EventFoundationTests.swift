@@ -295,6 +295,49 @@ final class EventFoundationTests: XCTestCase {
         )
     }
 
+    func testRemovingDrinkOptionClearsEveryChoiceReference() {
+        let participantId = UUID()
+        let removedOptionId = UUID()
+        let retainedOptionId = UUID()
+        var plan = EventFirstDrinkPlan(
+            options: [
+                DrinkOption(id: removedOptionId, name: "Beer"),
+                DrinkOption(id: retainedOptionId, name: "Tea")
+            ],
+            selections: [
+                FirstDrinkSelection(
+                    participantId: participantId,
+                    firstChoiceId: removedOptionId,
+                    secondChoiceId: retainedOptionId,
+                    thirdChoiceId: removedOptionId
+                )
+            ]
+        )
+
+        plan.removeOption(removedOptionId)
+
+        XCTAssertEqual(plan.options.map(\.id), [retainedOptionId])
+        XCTAssertNil(plan.selections[0].firstChoiceId)
+        XCTAssertEqual(plan.selections[0].secondChoiceId, retainedOptionId)
+        XCTAssertNil(plan.selections[0].thirdChoiceId)
+    }
+
+    func testRemovingParticipantCleansFirstDrinkSelection() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.drinkingParty.defaultFeatures,
+            firstDrinkPlan: EventFirstDrinkPlan(
+                selections: [
+                    FirstDrinkSelection(participantId: participantId)
+                ]
+            )
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertTrue(planning.firstDrinkPlan.selections.isEmpty)
+    }
+
     func testDuplicateOrganizerToolsMapsReferencesAndResetsProgress() {
         let oldParticipantId = UUID()
         let newParticipantId = UUID()
@@ -376,6 +419,39 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertEqual(copy.budgetPlan.approvalStatus, .pending)
     }
 
+    func testDuplicateFirstDrinkCopiesMenuAndResetsSelections() {
+        let option = DrinkOption(
+            name: "Sparkling Water",
+            isAlcoholic: false,
+            isToastOption: true
+        )
+        let planning = EventPlanningState(
+            features: EventType.drinkingParty.defaultFeatures,
+            firstDrinkPlan: EventFirstDrinkPlan(
+                options: [option],
+                selections: [
+                    FirstDrinkSelection(
+                        participantId: UUID(),
+                        firstChoiceId: option.id,
+                        secondChoiceId: option.id
+                    )
+                ],
+                responseDeadline: Date(timeIntervalSince1970: 2_000)
+            )
+        )
+
+        let copy = planning.duplicated(using: [:], partMap: [:])
+
+        XCTAssertEqual(copy.firstDrinkPlan.options.count, 1)
+        XCTAssertEqual(copy.firstDrinkPlan.options[0].name, option.name)
+        XCTAssertNotEqual(copy.firstDrinkPlan.options[0].id, option.id)
+        XCTAssertTrue(copy.firstDrinkPlan.selections.isEmpty)
+        XCTAssertEqual(
+            copy.firstDrinkPlan.responseDeadline,
+            Date(timeIntervalSince1970: 2_000)
+        )
+    }
+
     func testAssistantWarnsWhenBudgetAndAdvanceAreExceeded() {
         let organizer = EventParticipant(name: "Organizer")
         var event = Event(
@@ -422,6 +498,50 @@ final class EventFoundationTests: XCTestCase {
 
         XCTAssertTrue(actions.contains { $0.id == "items.unassigned" })
         XCTAssertTrue(actions.contains { $0.id == "timeline.empty" })
+    }
+
+    func testAssistantFindsMissingFirstDrinkMenuAndResponses() {
+        let participants = [
+            EventParticipant(name: "A"),
+            EventParticipant(name: "B")
+        ]
+        var event = Event(
+            title: "Party",
+            eventType: .drinkingParty,
+            participants: participants
+        )
+
+        var actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+        XCTAssertTrue(actions.contains { $0.id == "firstDrink.options.missing" })
+
+        let beer = DrinkOption(name: "Beer")
+        let tea = DrinkOption(name: "Tea", isToastOption: false)
+        event.planning.firstDrinkPlan = EventFirstDrinkPlan(
+            options: [beer, tea],
+            selections: [
+                FirstDrinkSelection(
+                    participantId: participants[0].id,
+                    firstChoiceId: beer.id,
+                    secondChoiceId: tea.id
+                )
+            ],
+            responseDeadline: Date(timeIntervalSince1970: 1_000)
+        )
+
+        actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english,
+            now: Date(timeIntervalSince1970: 2_000)
+        )
+
+        XCTAssertFalse(actions.contains { $0.id == "firstDrink.options.missing" })
+        let responseAction = actions.first {
+            $0.id == "firstDrink.responses.missing"
+        }
+        XCTAssertEqual(responseAction?.priority, .critical)
     }
 
     func testDuplicateCoordinationResetsVotesAndReservation() {

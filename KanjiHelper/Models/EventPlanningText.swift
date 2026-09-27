@@ -110,6 +110,23 @@ enum EventPlanningText: Int {
     case newTimelineEntry
     case editTimelineEntry
     case completedTimeline
+    case firstDrinkTitle
+    case firstDrinkDescription
+    case drinkMenu
+    case addDrink
+    case noDrinks
+    case drinkName
+    case alcoholic
+    case nonAlcoholic
+    case toastOption
+    case firstChoice
+    case secondChoice
+    case thirdChoice
+    case answered
+    case aggregate
+    case newDrink
+    case editDrink
+    case selectionIncomplete
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -221,7 +238,24 @@ private let eventPlanningTexts: [[String]] = [
     ["予定名", "Timeline Title", "日程名称", "行程名稱", "일정 이름", "Título de la actividad", "Título da atividade"],
     ["新しい予定", "New Timeline Entry", "新日程", "新行程", "새 일정", "Nueva actividad", "Nova atividade"],
     ["予定を編集", "Edit Timeline Entry", "编辑日程", "編輯行程", "일정 편집", "Editar actividad", "Editar atividade"],
-    ["実施済み", "Completed", "已完成", "已完成", "완료", "Completada", "Concluída"]
+    ["実施済み", "Completed", "已完成", "已完成", "완료", "Completada", "Concluída"],
+    ["一杯目セレクト", "First Drink", "第一杯饮品", "第一杯飲品", "첫 잔 선택", "Primera bebida", "Primeira bebida"],
+    ["第1・第2希望を事前に集めて注文を早くする", "Collect first and second choices before the event", "提前收集第一、第二选择以便快速点单", "事先收集第一、第二選擇以便快速點單", "1·2순위를 미리 모아 주문을 빠르게 진행", "Recoge la primera y segunda opción antes del evento", "Colete a primeira e segunda opção antes do evento"],
+    ["ドリンクメニュー", "Drink Menu", "饮品菜单", "飲品選單", "음료 메뉴", "Menú de bebidas", "Menu de bebidas"],
+    ["ドリンクを追加", "Add Drink", "添加饮品", "新增飲品", "음료 추가", "Añadir bebida", "Adicionar bebida"],
+    ["ドリンクがありません", "No drinks yet", "暂无饮品", "尚無飲品", "음료가 없습니다", "Aún no hay bebidas", "Ainda não há bebidas"],
+    ["ドリンク名", "Drink Name", "饮品名称", "飲品名稱", "음료 이름", "Nombre de la bebida", "Nome da bebida"],
+    ["アルコール", "Alcoholic", "含酒精", "含酒精", "알코올", "Con alcohol", "Alcoólica"],
+    ["ノンアルコール", "Non-Alcoholic", "无酒精", "無酒精", "무알코올", "Sin alcohol", "Sem álcool"],
+    ["乾杯用の候補", "Toast Option", "干杯候选", "乾杯候選", "건배 후보", "Opción para brindar", "Opção para brinde"],
+    ["第1希望", "First Choice", "第一选择", "第一選擇", "1순위", "Primera opción", "Primeira opção"],
+    ["第2希望", "Second Choice", "第二选择", "第二選擇", "2순위", "Segunda opción", "Segunda opção"],
+    ["第3希望（任意）", "Third Choice (Optional)", "第三选择（可选）", "第三選擇（選填）", "3순위(선택)", "Tercera opción (opcional)", "Terceira opção (opcional)"],
+    ["回答済み", "Answered", "已回答", "已回答", "응답 완료", "Respondido", "Respondido"],
+    ["一杯目集計", "First-Choice Totals", "第一选择统计", "第一選擇統計", "1순위 집계", "Totales de primera opción", "Totais da primeira opção"],
+    ["新しいドリンク", "New Drink", "新饮品", "新飲品", "새 음료", "Nueva bebida", "Nova bebida"],
+    ["ドリンクを編集", "Edit Drink", "编辑饮品", "編輯飲品", "음료 편집", "Editar bebida", "Editar bebida"],
+    ["第1・第2希望を選んでください", "Choose first and second choices", "请选择第一和第二选择", "請選擇第一和第二選擇", "1·2순위를 선택하세요", "Elige la primera y segunda opción", "Escolha a primeira e a segunda opção"]
 ]
 
 extension AppLanguage {

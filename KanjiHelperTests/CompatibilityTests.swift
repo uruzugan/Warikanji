@@ -100,6 +100,9 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertNil(planning.budgetPlan.totalLimitMinorUnits)
         XCTAssertNil(planning.budgetPlan.organizerParticipantId)
         XCTAssertEqual(planning.budgetPlan.approvalStatus, .notRequired)
+        XCTAssertTrue(planning.firstDrinkPlan.options.isEmpty)
+        XCTAssertTrue(planning.firstDrinkPlan.selections.isEmpty)
+        XCTAssertNil(planning.firstDrinkPlan.responseDeadline)
         XCTAssertTrue(planning.preparationItems.isEmpty)
         XCTAssertTrue(planning.timelineEntries.isEmpty)
     }
