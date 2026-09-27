@@ -196,20 +196,6 @@ final class EventViewModel: ObservableObject {
         saveEvents()
     }
 
-    func participantName(for participantId: UUID?, in eventId: UUID) -> String {
-        guard let participantId else { return "未設定" }
-        guard let event = event(for: eventId) else { return "不明な参加者" }
-        guard let participant = event.participants.first(
-            where: { $0.id == participantId }
-        ) else {
-            return "不明な参加者"
-        }
-
-        return participant.name.isEmpty
-            ? "不明な参加者"
-            : participant.name
-    }
-
     private func deleteReceiptImages(in event: Event) {
         let fileNames = event.expenses.flatMap(\.receiptImages)
         ReceiptImageStorage.shared.delete(fileNames)

@@ -103,7 +103,7 @@ struct WelcomeView: View {
                 .font(.headline)
                 .foregroundStyle(AppTheme.primary)
 
-            preferenceRow(title: "Language") {
+            preferenceRow(title: language.t(.language)) {
                 Picker("", selection: $language) {
                     ForEach(AppLanguage.allCases) { item in
                         Text(item.displayName).tag(item)

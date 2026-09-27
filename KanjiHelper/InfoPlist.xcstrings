@@ -1,0 +1,28 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCalendarsWriteOnlyAccessUsageDescription" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add event schedules to your calendar." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Añade los eventos a tu calendario." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "イベントの予定をカレンダーへ追加します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이벤트 일정을 캘린더에 추가합니다." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Adicione os eventos ao seu calendário." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "将活动日程添加到您的日历。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "將活動行程加入您的行事曆。" } }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the camera to scan and attach receipts." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Usa la cámara para leer y adjuntar recibos." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "レシートの読み取りと写真添付にカメラを使用します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "영수증 인식 및 사진 첨부에 카메라를 사용합니다." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Use a câmera para ler e anexar recibos." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "使用相机识别并附加收据。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "使用相機辨識並附加收據。" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

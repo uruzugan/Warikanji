@@ -140,7 +140,7 @@ struct AppSettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             cardTitle(language.t(.general), symbol: "gearshape.fill")
 
-            settingsLine(title: "Language", symbol: "globe") {
+            settingsLine(title: language.t(.language), symbol: "globe") {
                 Menu {
                     ForEach(AppLanguage.allCases) { item in
                         Button { language = item } label: {

@@ -4,7 +4,7 @@ enum AppText: Int {
     case done, settings
     case organizingEasier, trackExpenses, adjustShares, calculatePayments, trackPaymentStatus
     case yourAccount, currentAccount, name, localAccountDescription, nameChangeDescription
-    case languageAndCurrency, homeCurrency, referenceCurrency
+    case languageAndCurrency, language, homeCurrency, referenceCurrency
     case overseasCurrencyDescription, currencySettingsDescription
     case startWarikanji, general, saveSettings, settingsSaved
     case account, switchAccountDescription, switchAccount
@@ -38,6 +38,7 @@ private let appTexts: [[String]] = [
     ["名前はいつでも変更できます。", "You can change your name at any time.", "你可以随时更改姓名。", "你可以隨時更改姓名。", "이름은 언제든지 변경할 수 있습니다.", "Puedes cambiar tu nombre cuando quieras.", "Você pode alterar seu nome quando quiser."],
 
     ["言語と通貨", "Language & Currency", "语言与货币", "語言與貨幣", "언어 및 통화", "Idioma y moneda", "Idioma e moeda"],
+    ["言語", "Language", "语言", "語言", "언어", "Idioma", "Idioma"],
     ["イベントの初期通貨", "Default Event Currency", "活动默认货币", "活動預設貨幣", "이벤트 기본 통화", "Moneda predeterminada del evento", "Moeda padrão do evento"],
     ["参考換算先", "Reference Currency", "参考换算货币", "參考換算貨幣", "참고 환산 통화", "Moneda de referencia", "Moeda de referência"],
 
