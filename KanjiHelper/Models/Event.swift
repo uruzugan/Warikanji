@@ -133,6 +133,10 @@ struct Event: Identifiable, Codable, Equatable {
                 $0.votes.map(\.participantId)
             }
         )
+        if let organizerId = planning.budgetPlan.organizerParticipantId {
+            ids.insert(organizerId)
+        }
+        ids.formUnion(planning.budgetPlan.subsidizedParticipantIds)
 
         return ids
     }

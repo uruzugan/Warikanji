@@ -235,6 +235,90 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(planning.venuePlanning.candidates[0].votes.isEmpty)
     }
 
+    func testRemovingParticipantCleansBudgetReferences() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.meal.defaultFeatures,
+            budgetPlan: EventBudgetPlan(
+                organizerParticipantId: participantId,
+                companySubsidyMinorUnits: 1_000,
+                companySubsidyMode: .perParticipant,
+                companySubsidyAppliesToAll: false,
+                subsidizedParticipantIds: [participantId]
+            )
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertNil(planning.budgetPlan.organizerParticipantId)
+        XCTAssertTrue(planning.budgetPlan.subsidizedParticipantIds.isEmpty)
+    }
+
+    func testDuplicateBudgetMapsParticipantsAndReopensApproval() {
+        let oldOrganizerId = UUID()
+        let oldSubsidizedId = UUID()
+        let newOrganizerId = UUID()
+        let newSubsidizedId = UUID()
+        let planning = EventPlanningState(
+            features: EventType.meal.defaultFeatures,
+            budgetPlan: EventBudgetPlan(
+                totalLimitMinorUnits: 50_000,
+                organizerParticipantId: oldOrganizerId,
+                organizerAdvanceLimitMinorUnits: 20_000,
+                companySubsidyMinorUnits: 1_000,
+                companySubsidyMode: .perParticipant,
+                companySubsidyAppliesToAll: false,
+                subsidizedParticipantIds: [oldSubsidizedId],
+                approvalStatus: .approved
+            )
+        )
+
+        let copy = planning.duplicated(
+            using: [
+                oldOrganizerId: newOrganizerId,
+                oldSubsidizedId: newSubsidizedId
+            ],
+            partMap: [:]
+        )
+
+        XCTAssertEqual(copy.budgetPlan.totalLimitMinorUnits, 50_000)
+        XCTAssertEqual(copy.budgetPlan.organizerParticipantId, newOrganizerId)
+        XCTAssertEqual(
+            copy.budgetPlan.subsidizedParticipantIds,
+            [newSubsidizedId]
+        )
+        XCTAssertEqual(copy.budgetPlan.approvalStatus, .pending)
+    }
+
+    func testAssistantWarnsWhenBudgetAndAdvanceAreExceeded() {
+        let organizer = EventParticipant(name: "Organizer")
+        var event = Event(
+            title: "Dinner",
+            eventType: .meal,
+            participants: [organizer],
+            expenses: [
+                Expense(
+                    title: "Food",
+                    amount: 12_000,
+                    payerId: organizer.id
+                )
+            ]
+        )
+        event.planning.budgetPlan = EventBudgetPlan(
+            totalLimitMinorUnits: 10_000,
+            organizerParticipantId: organizer.id,
+            organizerAdvanceLimitMinorUnits: 8_000
+        )
+
+        let actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+
+        XCTAssertTrue(actions.contains { $0.id == "budget.totalExceeded" })
+        XCTAssertTrue(actions.contains { $0.id == "budget.advanceExceeded" })
+    }
+
     func testDuplicateCoordinationResetsVotesAndReservation() {
         let optionId = UUID()
         let candidateId = UUID()

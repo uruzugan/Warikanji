@@ -97,5 +97,8 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertTrue(planning.schedulePoll.responses.isEmpty)
         XCTAssertTrue(planning.venuePlanning.candidates.isEmpty)
         XCTAssertNil(planning.venuePlanning.reservation)
+        XCTAssertNil(planning.budgetPlan.totalLimitMinorUnits)
+        XCTAssertNil(planning.budgetPlan.organizerParticipantId)
+        XCTAssertEqual(planning.budgetPlan.approvalStatus, .notRequired)
     }
 }

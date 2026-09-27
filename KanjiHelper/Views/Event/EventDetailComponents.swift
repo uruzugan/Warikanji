@@ -470,6 +470,25 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var budgetSubtitle: String {
+        let spent = event.currency.formatted(
+            minorUnits: event.totalExpenseAmount
+        )
+        if let limit = event.planning.budgetPlan.totalLimitMinorUnits {
+            return "\(spent) / \(event.currency.formatted(minorUnits: limit))"
+        }
+
+        switch language {
+        case .japanese: return "現在 \(spent)"
+        case .english: return "Current \(spent)"
+        case .simplifiedChinese: return "当前 \(spent)"
+        case .traditionalChinese: return "目前 \(spent)"
+        case .korean: return "현재 \(spent)"
+        case .spanish: return "Actual \(spent)"
+        case .portuguese: return "Atual \(spent)"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(
@@ -559,6 +578,20 @@ struct EventDetailMenu: View {
                         tasksSubtitle,
                         "checklist",
                         AppTheme.primary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.budget) {
+                NavigationLink {
+                    EventBudgetView(eventId: eventId)
+                } label: {
+                    card(
+                        language.budgetText(.budget),
+                        budgetSubtitle,
+                        "chart.pie.fill",
+                        AppTheme.warning
                     )
                 }
                 .buttonStyle(.plain)

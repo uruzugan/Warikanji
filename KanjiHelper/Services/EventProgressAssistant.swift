@@ -260,6 +260,101 @@ enum EventProgressAssistant {
             )
         }
 
+        if event.planning.features.contains(.budget) {
+            let plan = event.planning.budgetPlan
+            let spent = event.totalExpenseAmount
+            let participantCount = max(event.participants.count, 1)
+            let perPerson = spent / participantCount
+
+            if let limit = plan.totalLimitMinorUnits, spent > limit {
+                actions.append(
+                    action(
+                        id: "budget.totalExceeded",
+                        priority: .critical,
+                        symbol: "chart.line.uptrend.xyaxis.circle.fill",
+                        title: language.text(
+                            ja: "総予算を超過", en: "Total budget exceeded",
+                            zhHans: "已超出总预算", zhHant: "已超出總預算",
+                            ko: "총예산 초과", es: "Presupuesto total superado",
+                            pt: "Orçamento total excedido"
+                        ),
+                        detail: "\(event.currency.formatted(minorUnits: spent)) / \(event.currency.formatted(minorUnits: limit))",
+                        destination: "budget"
+                    )
+                )
+            }
+
+            if let limit = plan.perParticipantLimitMinorUnits,
+               perPerson > limit {
+                actions.append(
+                    action(
+                        id: "budget.perPersonExceeded",
+                        priority: .high,
+                        symbol: "person.crop.circle.badge.exclamationmark",
+                        title: language.text(
+                            ja: "1人予算を超過", en: "Per-person budget exceeded",
+                            zhHans: "已超出人均预算", zhHant: "已超出每人預算",
+                            ko: "1인 예산 초과", es: "Presupuesto por persona superado",
+                            pt: "Orçamento por pessoa excedido"
+                        ),
+                        detail: "\(event.currency.formatted(minorUnits: perPerson)) / \(event.currency.formatted(minorUnits: limit))",
+                        destination: "budget"
+                    )
+                )
+            }
+
+            if let organizerId = plan.organizerParticipantId,
+               let limit = plan.organizerAdvanceLimitMinorUnits {
+                let advanced = event.expenses
+                    .filter { $0.payerId == organizerId }
+                    .reduce(0) { $0 + $1.amount }
+                if advanced > limit {
+                    actions.append(
+                        action(
+                            id: "budget.advanceExceeded",
+                            priority: .high,
+                            symbol: "person.crop.circle.badge.exclamationmark",
+                            title: language.text(
+                                ja: "幹事の立替上限を超過", en: "Organizer advance limit exceeded",
+                                zhHans: "组织者垫付已超限", zhHant: "主辦人墊付已超限",
+                                ko: "주최자 선결제 한도 초과", es: "Límite de adelanto superado",
+                                pt: "Limite de adiantamento excedido"
+                            ),
+                            detail: "\(event.currency.formatted(minorUnits: advanced)) / \(event.currency.formatted(minorUnits: limit))",
+                            destination: "budget"
+                        )
+                    )
+                }
+            }
+
+            if plan.totalLimitMinorUnits == nil,
+               plan.perParticipantLimitMinorUnits == nil {
+                actions.append(
+                    action(
+                        id: "budget.unset",
+                        priority: .normal,
+                        symbol: "chart.pie",
+                        title: language.text(
+                            ja: "予算を設定", en: "Set a budget",
+                            zhHans: "设置预算", zhHant: "設定預算",
+                            ko: "예산 설정", es: "Define un presupuesto",
+                            pt: "Defina um orçamento"
+                        ),
+                        detail: language.text(
+                            ja: "総額または1人あたりの目安を決めます。",
+                            en: "Set a total or per-person spending target.",
+                            zhHans: "设置总额或人均支出目标。",
+                            zhHant: "設定總額或每人支出目標。",
+                            ko: "총액 또는 1인당 지출 목표를 정하세요.",
+                            es: "Define un objetivo total o por persona.",
+                            pt: "Defina uma meta total ou por pessoa."
+                        ),
+                        destination: "budget"
+                    )
+                )
+            }
+        }
+
         let overdueTasks = event.planning.tasks.filter {
             $0.status != .completed && ($0.dueAt.map { $0 < now } ?? false)
         }
