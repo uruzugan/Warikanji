@@ -140,6 +140,21 @@ enum EventPlanningText: Int {
     case removePhoto
     case meetingPhoto
     case arrivalSummary
+    case seatingTitle
+    case seatingDescription
+    case addTable
+    case noTables
+    case tableName
+    case seatCount
+    case assignedSeats
+    case newTable
+    case editTable
+    case manageSeats
+    case seatNumber
+    case randomizeSeating
+    case randomizeMessage
+    case notEnoughSeats
+    case unassignedParticipants
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -281,7 +296,22 @@ private let eventPlanningTexts: [[String]] = [
     ["写真を撮る", "Take Photo", "拍摄照片", "拍攝照片", "사진 촬영", "Tomar foto", "Tirar foto"],
     ["写真を削除", "Remove Photo", "删除照片", "刪除照片", "사진 삭제", "Eliminar foto", "Remover foto"],
     ["集合場所の写真", "Meeting Point Photo", "集合地点照片", "集合地點照片", "집합 장소 사진", "Foto del punto de encuentro", "Foto do ponto de encontro"],
-    ["到着状況の集計", "Arrival Summary", "到达情况统计", "抵達狀況統計", "도착 현황", "Resumen de llegadas", "Resumo das chegadas"]
+    ["到着状況の集計", "Arrival Summary", "到达情况统计", "抵達狀況統計", "도착 현황", "Resumen de llegadas", "Resumo das chegadas"],
+    ["席順", "Seating", "座位安排", "座位安排", "좌석 배치", "Asientos", "Lugares"],
+    ["テーブルと席を用意し、参加者を手動またはランダムで配置", "Create tables and assign participants manually or randomly", "创建桌位并手动或随机安排参与者", "建立桌位並手動或隨機安排參加者", "테이블과 좌석을 만들고 참가자를 직접 또는 무작위 배치", "Crea mesas y asigna participantes manualmente o al azar", "Crie mesas e distribua participantes manualmente ou aleatoriamente"],
+    ["テーブルを追加", "Add Table", "添加桌位", "新增桌位", "테이블 추가", "Añadir mesa", "Adicionar mesa"],
+    ["テーブルはありません", "No tables yet", "尚无桌位", "尚無桌位", "테이블이 없습니다", "Aún no hay mesas", "Ainda não há mesas"],
+    ["テーブル名", "Table Name", "桌位名称", "桌位名稱", "테이블 이름", "Nombre de la mesa", "Nome da mesa"],
+    ["席数", "Number of Seats", "座位数", "座位數", "좌석 수", "Número de asientos", "Número de lugares"],
+    ["配置済み", "Assigned", "已安排", "已安排", "배치 완료", "Asignados", "Atribuídos"],
+    ["新しいテーブル", "New Table", "新桌位", "新桌位", "새 테이블", "Nueva mesa", "Nova mesa"],
+    ["テーブルを編集", "Edit Table", "编辑桌位", "編輯桌位", "테이블 편집", "Editar mesa", "Editar mesa"],
+    ["席を割り当てる", "Assign Seats", "安排座位", "安排座位", "좌석 배정", "Asignar asientos", "Atribuir lugares"],
+    ["席", "Seat", "座位", "座位", "좌석", "Asiento", "Lugar"],
+    ["席順をランダム作成", "Randomize Seating", "随机安排座位", "隨機安排座位", "좌석 무작위 배치", "Distribuir al azar", "Distribuir aleatoriamente"],
+    ["現在の席順を上書きして、全参加者をランダムに配置します。", "This replaces the current seating and assigns every participant randomly.", "这将覆盖当前座位并随机安排所有参与者。", "這將覆蓋目前座位並隨機安排所有參加者。", "현재 좌석을 덮어쓰고 모든 참가자를 무작위로 배치합니다.", "Se reemplazarán los asientos actuales y se distribuirá a todos al azar.", "A disposição atual será substituída e todos serão distribuídos aleatoriamente."],
+    ["参加者数に対して席が足りません", "There are not enough seats for all participants", "座位不足以容纳所有参与者", "座位不足以容納所有參加者", "모든 참가자를 배치할 좌석이 부족합니다", "No hay asientos suficientes para todos", "Não há lugares suficientes para todos"],
+    ["未配置の参加者", "Unassigned Participants", "未安排的参与者", "未安排的參加者", "미배치 참가자", "Participantes sin asiento", "Participantes sem lugar"]
 ]
 
 extension AppLanguage {

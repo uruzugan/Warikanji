@@ -106,6 +106,7 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertFalse(planning.meetingPlan.isConfigured)
         XCTAssertNil(planning.meetingPlan.meetingAt)
         XCTAssertNil(planning.meetingPlan.photoData)
+        XCTAssertTrue(planning.seatingPlan.tables.isEmpty)
         XCTAssertTrue(planning.preparationItems.isEmpty)
         XCTAssertTrue(planning.timelineEntries.isEmpty)
     }

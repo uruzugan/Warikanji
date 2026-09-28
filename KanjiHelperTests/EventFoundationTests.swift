@@ -338,6 +338,49 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(planning.firstDrinkPlan.selections.isEmpty)
     }
 
+    func testRemovingParticipantCleansSeatingAssignment() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            seatingPlan: EventSeatingPlan(
+                tables: [
+                    SeatingTable(
+                        name: "A",
+                        assignments: [
+                            SeatingAssignment(
+                                seatNumber: 1,
+                                participantId: participantId
+                            )
+                        ]
+                    )
+                ]
+            )
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertTrue(planning.seatingPlan.tables[0].assignments.isEmpty)
+    }
+
+    func testSeatingPlanAssignsParticipantsInSeatOrder() {
+        let participantIds = [UUID(), UUID(), UUID()]
+        var plan = EventSeatingPlan(
+            tables: [
+                SeatingTable(name: "A", seatCount: 2),
+                SeatingTable(name: "B", seatCount: 2)
+            ]
+        )
+
+        plan.assignParticipants(participantIds)
+
+        XCTAssertEqual(
+            plan.tables.flatMap(\.assignments).map(\.participantId),
+            participantIds
+        )
+        XCTAssertEqual(plan.tables[0].assignments.map(\.seatNumber), [1, 2])
+        XCTAssertEqual(plan.tables[1].assignments.map(\.seatNumber), [1])
+    }
+
     func testDuplicateOrganizerToolsMapsReferencesAndResetsProgress() {
         let oldParticipantId = UUID()
         let newParticipantId = UUID()
@@ -473,6 +516,28 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertEqual(copy.meetingPlan.photoData, photo)
     }
 
+    func testDuplicateSeatingCopiesTablesAndResetsAssignments() {
+        let table = SeatingTable(
+            name: "VIP",
+            seatCount: 6,
+            assignments: [
+                SeatingAssignment(seatNumber: 1, participantId: UUID())
+            ]
+        )
+        let planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            seatingPlan: EventSeatingPlan(tables: [table])
+        )
+
+        let copy = planning.duplicated(using: [:], partMap: [:])
+
+        XCTAssertEqual(copy.seatingPlan.tables.count, 1)
+        XCTAssertEqual(copy.seatingPlan.tables[0].name, "VIP")
+        XCTAssertEqual(copy.seatingPlan.tables[0].seatCount, 6)
+        XCTAssertNotEqual(copy.seatingPlan.tables[0].id, table.id)
+        XCTAssertTrue(copy.seatingPlan.tables[0].assignments.isEmpty)
+    }
+
     func testAssistantWarnsWhenBudgetAndAdvanceAreExceeded() {
         let organizer = EventParticipant(name: "Organizer")
         var event = Event(
@@ -585,6 +650,55 @@ final class EventFoundationTests: XCTestCase {
         )
 
         XCTAssertFalse(actions.contains { $0.id == "meeting.point.missing" })
+    }
+
+    func testAssistantTracksSeatingCapacityAndAssignments() {
+        let participants = [
+            EventParticipant(name: "A"),
+            EventParticipant(name: "B")
+        ]
+        var event = Event(
+            title: "Party",
+            eventType: .party,
+            participants: participants
+        )
+
+        var actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+        XCTAssertTrue(actions.contains { $0.id == "seating.tables.empty" })
+
+        event.planning.seatingPlan = EventSeatingPlan(
+            tables: [SeatingTable(name: "A", seatCount: 1)]
+        )
+        actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+        XCTAssertTrue(actions.contains { $0.id == "seating.seats.insufficient" })
+
+        event.planning.seatingPlan = EventSeatingPlan(
+            tables: [
+                SeatingTable(
+                    name: "A",
+                    seatCount: 2,
+                    assignments: [
+                        SeatingAssignment(
+                            seatNumber: 1,
+                            participantId: participants[0].id
+                        )
+                    ]
+                )
+            ]
+        )
+        actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+        XCTAssertTrue(
+            actions.contains { $0.id == "seating.participants.unassigned" }
+        )
     }
 
     func testDuplicateCoordinationResetsVotesAndReservation() {

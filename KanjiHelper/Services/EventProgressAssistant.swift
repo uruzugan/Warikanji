@@ -323,6 +323,61 @@ enum EventProgressAssistant {
             )
         }
 
+        if event.planning.features.contains(.seating) {
+            let plan = event.planning.seatingPlan
+            if plan.tables.isEmpty {
+                actions.append(
+                    action(
+                        id: "seating.tables.empty",
+                        priority: .normal,
+                        symbol: "chair.lounge",
+                        title: language.text(
+                            ja: "席順を作成", en: "Create a seating plan",
+                            zhHans: "创建座位安排", zhHant: "建立座位安排",
+                            ko: "좌석 배치 만들기", es: "Crea la distribución de asientos",
+                            pt: "Crie a disposição dos lugares"
+                        ),
+                        detail: language.planningText(.seatingDescription),
+                        destination: "seating"
+                    )
+                )
+            } else if plan.totalSeatCount < namedParticipants.count {
+                actions.append(
+                    action(
+                        id: "seating.seats.insufficient",
+                        priority: .high,
+                        symbol: "chair.lounge.fill",
+                        title: language.planningText(.notEnoughSeats),
+                        detail: "\(plan.totalSeatCount) / \(namedParticipants.count)",
+                        destination: "seating"
+                    )
+                )
+            } else {
+                let unassigned = namedParticipants.filter {
+                    !plan.assignedParticipantIds.contains($0.id)
+                }.count
+                if unassigned > 0 {
+                    actions.append(
+                        action(
+                            id: "seating.participants.unassigned",
+                            priority: .normal,
+                            symbol: "person.crop.circle.badge.questionmark",
+                            title: language.planningText(.unassignedParticipants),
+                            detail: countText(
+                                unassigned,
+                                language: language,
+                                ja: "未配置：%d人", en: "%d people need seats",
+                                zhHans: "%d人尚未安排", zhHant: "%d人尚未安排",
+                                ko: "미배치 %d명", es: "%d personas sin asiento",
+                                pt: "%d pessoas sem lugar"
+                            ),
+                            destination: "seating"
+                        )
+                    )
+                }
+            }
+        }
+
         if event.planning.features.contains(.multipleParts), event.planning.parts.isEmpty {
             actions.append(
                 action(

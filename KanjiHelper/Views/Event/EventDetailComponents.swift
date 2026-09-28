@@ -499,6 +499,26 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var seatingSubtitle: String {
+        let plan = event.planning.seatingPlan
+        guard !plan.tables.isEmpty else {
+            return language.planningText(.noTables)
+        }
+        let assigned = event.participants.filter {
+            plan.assignedParticipantIds.contains($0.id)
+        }.count
+
+        switch language {
+        case .japanese: return "配置済み \(assigned) / \(event.participants.count)人"
+        case .english: return "\(assigned) / \(event.participants.count) assigned"
+        case .simplifiedChinese: return "已安排 \(assigned) / \(event.participants.count) 人"
+        case .traditionalChinese: return "已安排 \(assigned) / \(event.participants.count) 人"
+        case .korean: return "배치 \(assigned) / \(event.participants.count)명"
+        case .spanish: return "\(assigned) / \(event.participants.count) asignados"
+        case .portuguese: return "\(assigned) / \(event.participants.count) atribuídos"
+        }
+    }
+
     private var tasksSubtitle: String {
         let incompleteTasks = event.planning.tasks.filter {
             $0.status != .completed
@@ -648,6 +668,20 @@ struct EventDetailMenu: View {
                         meetingSubtitle,
                         "location.circle.fill",
                         AppTheme.primary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.seating) {
+                NavigationLink {
+                    SeatingPlanView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.seatingTitle),
+                        seatingSubtitle,
+                        "chair.lounge.fill",
+                        AppTheme.secondary
                     )
                 }
                 .buttonStyle(.plain)
