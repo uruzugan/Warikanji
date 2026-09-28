@@ -10,7 +10,7 @@ struct EventProgressAssistantCard: View {
                 [
                     "participants", "attendance", "parts", "tasks", "checklist",
                     "timeline", "schedule", "venue", "firstDrink", "meeting", "seating",
-                    "budget", "settlement", "payments"
+                    "reception", "budget", "settlement", "payments"
                 ].contains($0.destinationKey)
             }
             .prefix(3)
@@ -116,6 +116,13 @@ struct EventProgressAssistantCard: View {
         case "seating":
             NavigationLink {
                 SeatingPlanView(eventId: event.id)
+            } label: {
+                actionRow(action)
+            }
+            .buttonStyle(.plain)
+        case "reception":
+            NavigationLink {
+                ReceptionView(eventId: event.id)
             } label: {
                 actionRow(action)
             }

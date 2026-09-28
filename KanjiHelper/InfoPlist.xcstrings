@@ -25,13 +25,13 @@
     },
     "NSCameraUsageDescription" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the camera to scan and attach receipts." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Usa la cámara para leer y adjuntar recibos." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "レシートの読み取りと写真添付にカメラを使用します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "영수증 인식 및 사진 첨부에 카메라를 사용합니다." } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Use a câmera para ler e anexar recibos." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "使用相机识别并附加收据。" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "使用相機辨識並附加收據。" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the camera to scan receipts, attach photos, and read event check-in QR codes." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Usa la cámara para leer recibos, adjuntar fotos y escanear códigos QR de registro." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "レシートの読み取り、写真添付、イベント受付QRの読み取りにカメラを使用します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "영수증 인식, 사진 첨부 및 이벤트 접수 QR 코드 스캔에 카메라를 사용합니다." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Use a câmera para ler recibos, anexar fotos e escanear códigos QR de check-in." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "使用相机识别收据、附加照片并扫描活动签到二维码。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "使用相機辨識收據、附加照片並掃描活動報到QR。" } }
       }
     }
   },

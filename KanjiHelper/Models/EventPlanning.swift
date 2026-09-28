@@ -213,6 +213,7 @@ struct EventPlanningState: Codable, Equatable {
     var firstDrinkPlan: EventFirstDrinkPlan
     var meetingPlan: EventMeetingPlan
     var seatingPlan: EventSeatingPlan
+    var receptionPlan: EventReceptionPlan
     var parts: [EventPart]
     var participantResponses: [ParticipantResponse]
     var tasks: [EventTask]
@@ -231,6 +232,7 @@ struct EventPlanningState: Codable, Equatable {
         firstDrinkPlan: EventFirstDrinkPlan = EventFirstDrinkPlan(),
         meetingPlan: EventMeetingPlan = EventMeetingPlan(),
         seatingPlan: EventSeatingPlan = EventSeatingPlan(),
+        receptionPlan: EventReceptionPlan = EventReceptionPlan(),
         parts: [EventPart] = [],
         participantResponses: [ParticipantResponse] = [],
         tasks: [EventTask] = [],
@@ -248,6 +250,7 @@ struct EventPlanningState: Codable, Equatable {
         self.firstDrinkPlan = firstDrinkPlan
         self.meetingPlan = meetingPlan
         self.seatingPlan = seatingPlan
+        self.receptionPlan = receptionPlan
         self.parts = parts
         self.participantResponses = participantResponses
         self.tasks = tasks
@@ -259,7 +262,7 @@ struct EventPlanningState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case formatVersion, features, access, schedulePoll, venuePlanning, budgetPlan
-        case firstDrinkPlan, meetingPlan, seatingPlan
+        case firstDrinkPlan, meetingPlan, seatingPlan, receptionPlan
         case parts, participantResponses
         case tasks, preparationItems, timelineEntries
         case activity, dismissedAssistantActionKeys
@@ -300,6 +303,10 @@ struct EventPlanningState: Codable, Equatable {
             EventSeatingPlan.self,
             forKey: .seatingPlan
         ) ?? EventSeatingPlan()
+        receptionPlan = try container.decodeIfPresent(
+            EventReceptionPlan.self,
+            forKey: .receptionPlan
+        ) ?? EventReceptionPlan()
         parts = try container.decodeIfPresent([EventPart].self, forKey: .parts) ?? []
         participantResponses = try container.decodeIfPresent(
             [ParticipantResponse].self,
@@ -335,6 +342,7 @@ struct EventPlanningState: Codable, Equatable {
         budgetPlan.removeParticipant(participantId)
         firstDrinkPlan.removeParticipant(participantId)
         seatingPlan.removeParticipant(participantId)
+        receptionPlan.removeParticipant(participantId)
 
         for index in parts.indices {
             parts[index].participantIds.remove(participantId)
@@ -438,6 +446,7 @@ struct EventPlanningState: Codable, Equatable {
             firstDrinkPlan: firstDrinkPlan.duplicated(),
             meetingPlan: meetingPlan,
             seatingPlan: seatingPlan.duplicated(),
+            receptionPlan: receptionPlan.duplicated(using: participantMap),
             parts: duplicatedParts,
             tasks: duplicatedTasks,
             preparationItems: duplicatedItems,

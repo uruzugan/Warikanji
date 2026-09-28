@@ -378,6 +378,52 @@ enum EventProgressAssistant {
             }
         }
 
+        if event.planning.features.contains(.reception),
+           !event.participants.isEmpty {
+            let reception = event.planning.receptionPlan
+            if reception.entries.isEmpty {
+                actions.append(
+                    action(
+                        id: "reception.prepare",
+                        priority: .normal,
+                        symbol: "qrcode.viewfinder",
+                        title: language.planningText(.prepareReception),
+                        detail: language.planningText(.receptionDescription),
+                        destination: "reception"
+                    )
+                )
+            } else {
+                let checkedIn = reception.checkedInParticipantIds
+                let notCheckedIn = event.participants.filter {
+                    !checkedIn.contains($0.id)
+                }.count
+                let receptionWindowEnd = max(event.date, event.endDate)
+                    .addingTimeInterval(12 * 60 * 60)
+                let isReceptionTime = now >= event.date.addingTimeInterval(-2 * 60 * 60)
+                    && now <= receptionWindowEnd
+
+                if isReceptionTime, notCheckedIn > 0 {
+                    actions.append(
+                        action(
+                            id: "reception.pending",
+                            priority: .high,
+                            symbol: "person.crop.circle.badge.questionmark",
+                            title: language.planningText(.notCheckedIn),
+                            detail: countText(
+                                notCheckedIn,
+                                language: language,
+                                ja: "未受付：%d人", en: "%d people have not checked in",
+                                zhHans: "%d人尚未签到", zhHant: "%d人尚未報到",
+                                ko: "미접수 %d명", es: "%d personas sin registrar",
+                                pt: "%d pessoas sem check-in"
+                            ),
+                            destination: "reception"
+                        )
+                    )
+                }
+            }
+        }
+
         if event.planning.features.contains(.multipleParts), event.planning.parts.isEmpty {
             actions.append(
                 action(

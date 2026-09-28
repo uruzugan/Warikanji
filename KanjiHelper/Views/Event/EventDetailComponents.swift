@@ -519,6 +519,21 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var receptionSubtitle: String {
+        let checkedIn = event.planning.receptionPlan.checkedInParticipantIds
+            .intersection(event.participants.map(\.id)).count
+
+        switch language {
+        case .japanese: return "受付済み \(checkedIn) / \(event.participants.count)人"
+        case .english: return "\(checkedIn) / \(event.participants.count) checked in"
+        case .simplifiedChinese: return "已签到 \(checkedIn) / \(event.participants.count) 人"
+        case .traditionalChinese: return "已報到 \(checkedIn) / \(event.participants.count) 人"
+        case .korean: return "접수 \(checkedIn) / \(event.participants.count)명"
+        case .spanish: return "\(checkedIn) / \(event.participants.count) registrados"
+        case .portuguese: return "\(checkedIn) / \(event.participants.count) com check-in"
+        }
+    }
+
     private var tasksSubtitle: String {
         let incompleteTasks = event.planning.tasks.filter {
             $0.status != .completed
@@ -682,6 +697,20 @@ struct EventDetailMenu: View {
                         seatingSubtitle,
                         "chair.lounge.fill",
                         AppTheme.secondary
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.reception) {
+                NavigationLink {
+                    ReceptionView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.receptionTitle),
+                        receptionSubtitle,
+                        "qrcode.viewfinder",
+                        AppTheme.success
                     )
                 }
                 .buttonStyle(.plain)

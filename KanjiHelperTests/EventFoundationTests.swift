@@ -848,4 +848,124 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(copy.access.members.isEmpty)
         XCTAssertTrue(copy.activity.isEmpty)
     }
+
+    func testReceptionSynchronizesParticipantsAndPreservesStatus() {
+        let firstId = UUID()
+        let secondId = UUID()
+        let checkedInAt = Date(timeIntervalSince1970: 1_000)
+        let token = UUID()
+        var reception = EventReceptionPlan(
+            entries: [
+                ReceptionEntry(
+                    participantId: firstId,
+                    token: token,
+                    checkedInAt: checkedInAt
+                )
+            ]
+        )
+
+        reception.synchronize(with: [firstId, secondId])
+
+        XCTAssertEqual(reception.entries.map(\.participantId), [firstId, secondId])
+        XCTAssertEqual(reception.entries[0].token, token)
+        XCTAssertEqual(reception.entries[0].checkedInAt, checkedInAt)
+        XCTAssertNotEqual(reception.entries[1].token, token)
+
+        let tokens = reception.entries.map(\.token)
+        reception.synchronize(with: [firstId, secondId])
+        XCTAssertEqual(reception.entries.map(\.token), tokens)
+    }
+
+    func testRemovingParticipantCleansReceptionEntry() {
+        let participantId = UUID()
+        var planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            receptionPlan: EventReceptionPlan(
+                entries: [ReceptionEntry(participantId: participantId)]
+            )
+        )
+
+        planning.removeParticipant(participantId)
+
+        XCTAssertTrue(planning.receptionPlan.entries.isEmpty)
+    }
+
+    func testDuplicateReceptionCreatesFreshPassAndClearsCheckIn() {
+        let oldParticipantId = UUID()
+        let newParticipantId = UUID()
+        let oldEntry = ReceptionEntry(
+            participantId: oldParticipantId,
+            checkedInAt: Date(timeIntervalSince1970: 1_000)
+        )
+        let planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            receptionPlan: EventReceptionPlan(entries: [oldEntry])
+        )
+
+        let copy = planning.duplicated(
+            using: [oldParticipantId: newParticipantId],
+            partMap: [:]
+        )
+
+        XCTAssertEqual(copy.receptionPlan.entries.count, 1)
+        XCTAssertEqual(
+            copy.receptionPlan.entries[0].participantId,
+            newParticipantId
+        )
+        XCTAssertNotEqual(copy.receptionPlan.entries[0].token, oldEntry.token)
+        XCTAssertNil(copy.receptionPlan.entries[0].checkedInAt)
+    }
+
+    func testReceptionQRCodeOnlyAcceptsMatchingEvent() {
+        let eventId = UUID()
+        let entry = ReceptionEntry(participantId: UUID())
+        let payload = entry.qrPayload(eventId: eventId)
+
+        XCTAssertEqual(
+            ReceptionEntry.token(from: payload, eventId: eventId),
+            entry.token
+        )
+        XCTAssertNil(
+            ReceptionEntry.token(from: payload, eventId: UUID())
+        )
+        XCTAssertNil(
+            ReceptionEntry.token(from: "https://example.com", eventId: eventId)
+        )
+    }
+
+    func testAssistantPreparesReceptionAndWarnsAboutPendingGuests() {
+        let now = Date(timeIntervalSince1970: 10_000)
+        let participants = [
+            EventParticipant(name: "A"),
+            EventParticipant(name: "B")
+        ]
+        var event = Event(
+            title: "Party",
+            date: now,
+            endDate: now.addingTimeInterval(3_600),
+            eventType: .party,
+            participants: participants
+        )
+        event.planning.features.enabled.insert(.reception)
+
+        var actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english,
+            now: now
+        )
+        XCTAssertTrue(actions.contains { $0.id == "reception.prepare" })
+
+        event.planning.receptionPlan.synchronize(
+            with: participants.map(\.id)
+        )
+        event.planning.receptionPlan.entries[0].checkedInAt = now
+        actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english,
+            now: now
+        )
+
+        XCTAssertFalse(actions.contains { $0.id == "reception.prepare" })
+        XCTAssertTrue(actions.contains { $0.id == "reception.pending" })
+    }
 }

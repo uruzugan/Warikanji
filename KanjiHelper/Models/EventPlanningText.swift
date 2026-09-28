@@ -155,6 +155,19 @@ enum EventPlanningText: Int {
     case randomizeMessage
     case notEnoughSeats
     case unassignedParticipants
+    case receptionTitle
+    case receptionDescription
+    case checkedIn
+    case notCheckedIn
+    case checkInSummary
+    case scanQRCode
+    case qrPass
+    case checkIn
+    case undoCheckIn
+    case invalidQRCode
+    case scannerUnavailable
+    case prepareReception
+    case checkedInAt
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -311,7 +324,20 @@ private let eventPlanningTexts: [[String]] = [
     ["席順をランダム作成", "Randomize Seating", "随机安排座位", "隨機安排座位", "좌석 무작위 배치", "Distribuir al azar", "Distribuir aleatoriamente"],
     ["現在の席順を上書きして、全参加者をランダムに配置します。", "This replaces the current seating and assigns every participant randomly.", "这将覆盖当前座位并随机安排所有参与者。", "這將覆蓋目前座位並隨機安排所有參加者。", "현재 좌석을 덮어쓰고 모든 참가자를 무작위로 배치합니다.", "Se reemplazarán los asientos actuales y se distribuirá a todos al azar.", "A disposição atual será substituída e todos serão distribuídos aleatoriamente."],
     ["参加者数に対して席が足りません", "There are not enough seats for all participants", "座位不足以容纳所有参与者", "座位不足以容納所有參加者", "모든 참가자를 배치할 좌석이 부족합니다", "No hay asientos suficientes para todos", "Não há lugares suficientes para todos"],
-    ["未配置の参加者", "Unassigned Participants", "未安排的参与者", "未安排的參加者", "미배치 참가자", "Participantes sin asiento", "Participantes sem lugar"]
+    ["未配置の参加者", "Unassigned Participants", "未安排的参与者", "未安排的參加者", "미배치 참가자", "Participantes sin asiento", "Participantes sem lugar"],
+    ["受付・チェックイン", "Reception & Check-in", "接待与签到", "接待與報到", "접수·체크인", "Recepción y registro", "Recepção e check-in"],
+    ["参加者QRまたは手動操作で受付を記録。支払い状況とは別に管理します。", "Record arrivals by participant QR or manually. Payment status stays separate.", "通过参与者二维码或手动操作记录签到，与付款状态分开管理。", "透過參加者QR或手動操作記錄報到，與付款狀態分開管理。", "참가자 QR 또는 수동으로 접수를 기록하며 결제 상태와 별도로 관리합니다.", "Registra la llegada por QR o manualmente, sin cambiar el estado de pago.", "Registre a chegada por QR ou manualmente, sem alterar o pagamento."],
+    ["受付済み", "Checked In", "已签到", "已報到", "접수 완료", "Registrado", "Check-in feito"],
+    ["未受付", "Not Checked In", "未签到", "未報到", "미접수", "Sin registrar", "Sem check-in"],
+    ["受付状況", "Check-in Summary", "签到情况", "報到狀況", "접수 현황", "Resumen de registro", "Resumo do check-in"],
+    ["QRを読み取る", "Scan QR Code", "扫描二维码", "掃描QR", "QR 스캔", "Escanear QR", "Ler QR"],
+    ["参加者QR", "Participant QR", "参与者二维码", "參加者QR", "참가자 QR", "QR del participante", "QR do participante"],
+    ["受付する", "Check In", "签到", "報到", "접수하기", "Registrar", "Fazer check-in"],
+    ["受付を取り消す", "Undo Check-in", "取消签到", "取消報到", "접수 취소", "Deshacer registro", "Desfazer check-in"],
+    ["このイベントの有効な受付QRではありません", "This is not a valid check-in QR for this event", "这不是本活动的有效签到二维码", "這不是本活動的有效報到QR", "이 이벤트의 유효한 접수 QR이 아닙니다", "Este QR no es válido para este evento", "Este QR não é válido para este evento"],
+    ["この端末ではQRスキャナーを使用できません", "QR scanning is unavailable on this device", "此设备无法使用二维码扫描器", "此裝置無法使用QR掃描器", "이 기기에서는 QR 스캐너를 사용할 수 없습니다", "El escáner QR no está disponible en este dispositivo", "O leitor de QR não está disponível neste dispositivo"],
+    ["受付を準備", "Prepare Reception", "准备签到", "準備報到", "접수 준비", "Preparar recepción", "Preparar recepção"],
+    ["受付時刻", "Checked In At", "签到时间", "報到時間", "접수 시각", "Hora de registro", "Horário do check-in"]
 ]
 
 extension AppLanguage {
