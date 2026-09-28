@@ -452,6 +452,27 @@ final class EventFoundationTests: XCTestCase {
         )
     }
 
+    func testDuplicatePlanningKeepsMeetingInstructionsAndPhoto() {
+        let meetingAt = Date(timeIntervalSince1970: 2_000)
+        let photo = Data([1, 2, 3])
+        let planning = EventPlanningState(
+            features: EventType.party.defaultFeatures,
+            meetingPlan: EventMeetingPlan(
+                name: "Central Gate",
+                instructions: "Next to the clock",
+                meetingAt: meetingAt,
+                photoData: photo
+            )
+        )
+
+        let copy = planning.duplicated(using: [:], partMap: [:])
+
+        XCTAssertEqual(copy.meetingPlan.name, "Central Gate")
+        XCTAssertEqual(copy.meetingPlan.instructions, "Next to the clock")
+        XCTAssertEqual(copy.meetingPlan.meetingAt, meetingAt)
+        XCTAssertEqual(copy.meetingPlan.photoData, photo)
+    }
+
     func testAssistantWarnsWhenBudgetAndAdvanceAreExceeded() {
         let organizer = EventParticipant(name: "Organizer")
         var event = Event(
@@ -542,6 +563,28 @@ final class EventFoundationTests: XCTestCase {
             $0.id == "firstDrink.responses.missing"
         }
         XCTAssertEqual(responseAction?.priority, .critical)
+    }
+
+    func testAssistantRequestsMeetingPointUntilConfigured() {
+        var event = Event(
+            title: "Party",
+            eventType: .party,
+            participants: [EventParticipant(name: "A")]
+        )
+
+        var actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+        XCTAssertTrue(actions.contains { $0.id == "meeting.point.missing" })
+
+        event.planning.meetingPlan = EventMeetingPlan(name: "North Gate")
+        actions = EventProgressAssistant.actions(
+            for: event,
+            language: .english
+        )
+
+        XCTAssertFalse(actions.contains { $0.id == "meeting.point.missing" })
     }
 
     func testDuplicateCoordinationResetsVotesAndReservation() {

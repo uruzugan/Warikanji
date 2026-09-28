@@ -476,6 +476,29 @@ struct EventDetailMenu: View {
         }
     }
 
+    private var meetingSubtitle: String {
+        let plan = event.planning.meetingPlan
+        guard plan.isConfigured else {
+            return language.planningText(.noMeetingPoint)
+        }
+        let arrived = event.planning.participantResponses.filter { response in
+            response.arrivalStatus == .arrived
+                && event.participants.contains(where: {
+                    $0.id == response.participantId
+                })
+        }.count
+
+        switch language {
+        case .japanese: return "\(plan.name)・到着 \(arrived) / \(event.participants.count)人"
+        case .english: return "\(plan.name) · \(arrived) / \(event.participants.count) arrived"
+        case .simplifiedChinese: return "\(plan.name)・已到达 \(arrived) / \(event.participants.count) 人"
+        case .traditionalChinese: return "\(plan.name)・已抵達 \(arrived) / \(event.participants.count) 人"
+        case .korean: return "\(plan.name) · 도착 \(arrived) / \(event.participants.count)명"
+        case .spanish: return "\(plan.name) · llegaron \(arrived) / \(event.participants.count)"
+        case .portuguese: return "\(plan.name) · chegaram \(arrived) / \(event.participants.count)"
+        }
+    }
+
     private var tasksSubtitle: String {
         let incompleteTasks = event.planning.tasks.filter {
             $0.status != .completed
@@ -611,6 +634,20 @@ struct EventDetailMenu: View {
                         firstDrinkSubtitle,
                         "wineglass.fill",
                         AppTheme.warning
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            if event.planning.features.contains(.meetingAndArrival) {
+                NavigationLink {
+                    MeetingAndArrivalView(eventId: eventId)
+                } label: {
+                    card(
+                        language.planningText(.meetingAndArrivalTitle),
+                        meetingSubtitle,
+                        "location.circle.fill",
+                        AppTheme.primary
                     )
                 }
                 .buttonStyle(.plain)

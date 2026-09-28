@@ -127,6 +127,19 @@ enum EventPlanningText: Int {
     case newDrink
     case editDrink
     case selectionIncomplete
+    case meetingAndArrivalTitle
+    case meetingAndArrivalDescription
+    case meetingPoint
+    case meetingPointName
+    case meetingInstructions
+    case meetingTime
+    case editMeetingPoint
+    case noMeetingPoint
+    case choosePhoto
+    case takePhoto
+    case removePhoto
+    case meetingPhoto
+    case arrivalSummary
 }
 
 private let eventPlanningTexts: [[String]] = [
@@ -255,7 +268,20 @@ private let eventPlanningTexts: [[String]] = [
     ["一杯目集計", "First-Choice Totals", "第一选择统计", "第一選擇統計", "1순위 집계", "Totales de primera opción", "Totais da primeira opção"],
     ["新しいドリンク", "New Drink", "新饮品", "新飲品", "새 음료", "Nueva bebida", "Nova bebida"],
     ["ドリンクを編集", "Edit Drink", "编辑饮品", "編輯飲品", "음료 편집", "Editar bebida", "Editar bebida"],
-    ["第1・第2希望を選んでください", "Choose first and second choices", "请选择第一和第二选择", "請選擇第一和第二選擇", "1·2순위를 선택하세요", "Elige la primera y segunda opción", "Escolha a primeira e a segunda opção"]
+    ["第1・第2希望を選んでください", "Choose first and second choices", "请选择第一和第二选择", "請選擇第一和第二選擇", "1·2순위를 선택하세요", "Elige la primera y segunda opción", "Escolha a primeira e a segunda opção"],
+    ["集合・到着", "Meeting & Arrival", "集合与到达", "集合與抵達", "집합·도착", "Encuentro y llegada", "Encontro e chegada"],
+    ["集合場所の案内と参加者の到着状況をまとめて確認", "Share meeting instructions and review arrival status", "共享集合地点并确认参与者到达情况", "分享集合地點並確認參加者抵達狀況", "집합 안내와 참가자 도착 상태를 한눈에 확인", "Comparte el punto de encuentro y revisa las llegadas", "Compartilhe o ponto de encontro e acompanhe as chegadas"],
+    ["集合場所", "Meeting Point", "集合地点", "集合地點", "집합 장소", "Punto de encuentro", "Ponto de encontro"],
+    ["集合場所名", "Meeting Point Name", "集合地点名称", "集合地點名稱", "집합 장소 이름", "Nombre del punto de encuentro", "Nome do ponto de encontro"],
+    ["集合方法・目印", "Instructions & Landmarks", "集合说明与地标", "集合說明與地標", "집합 방법·표시", "Indicaciones y referencias", "Instruções e referências"],
+    ["集合時刻", "Meeting Time", "集合时间", "集合時間", "집합 시간", "Hora de encuentro", "Horário do encontro"],
+    ["集合場所を編集", "Edit Meeting Point", "编辑集合地点", "編輯集合地點", "집합 장소 편집", "Editar punto de encuentro", "Editar ponto de encontro"],
+    ["集合場所は未設定です", "No meeting point set", "尚未设置集合地点", "尚未設定集合地點", "집합 장소가 설정되지 않았습니다", "No se ha definido el punto de encuentro", "Ponto de encontro não definido"],
+    ["写真を選ぶ", "Choose Photo", "选择照片", "選擇照片", "사진 선택", "Elegir foto", "Escolher foto"],
+    ["写真を撮る", "Take Photo", "拍摄照片", "拍攝照片", "사진 촬영", "Tomar foto", "Tirar foto"],
+    ["写真を削除", "Remove Photo", "删除照片", "刪除照片", "사진 삭제", "Eliminar foto", "Remover foto"],
+    ["集合場所の写真", "Meeting Point Photo", "集合地点照片", "集合地點照片", "집합 장소 사진", "Foto del punto de encuentro", "Foto do ponto de encontro"],
+    ["到着状況の集計", "Arrival Summary", "到达情况统计", "抵達狀況統計", "도착 현황", "Resumen de llegadas", "Resumo das chegadas"]
 ]
 
 extension AppLanguage {

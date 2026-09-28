@@ -296,6 +296,33 @@ enum EventProgressAssistant {
             }
         }
 
+        if event.planning.features.contains(.meetingAndArrival),
+           !event.planning.meetingPlan.isConfigured {
+            actions.append(
+                action(
+                    id: "meeting.point.missing",
+                    priority: .normal,
+                    symbol: "location.circle",
+                    title: language.text(
+                        ja: "集合場所を設定", en: "Set a meeting point",
+                        zhHans: "设置集合地点", zhHant: "設定集合地點",
+                        ko: "집합 장소 설정", es: "Define el punto de encuentro",
+                        pt: "Defina o ponto de encontro"
+                    ),
+                    detail: language.text(
+                        ja: "目印や写真を登録して迷いにくくします。",
+                        en: "Add landmarks and a photo so everyone can find it.",
+                        zhHans: "添加地标和照片，方便大家找到集合地点。",
+                        zhHant: "新增地標和照片，方便大家找到集合地點。",
+                        ko: "표시와 사진을 추가해 쉽게 찾을 수 있게 하세요.",
+                        es: "Añade referencias y una foto para que sea fácil encontrarlo.",
+                        pt: "Adicione referências e uma foto para facilitar o encontro."
+                    ),
+                    destination: "meeting"
+                )
+            )
+        }
+
         if event.planning.features.contains(.multipleParts), event.planning.parts.isEmpty {
             actions.append(
                 action(

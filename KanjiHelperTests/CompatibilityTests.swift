@@ -103,6 +103,9 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertTrue(planning.firstDrinkPlan.options.isEmpty)
         XCTAssertTrue(planning.firstDrinkPlan.selections.isEmpty)
         XCTAssertNil(planning.firstDrinkPlan.responseDeadline)
+        XCTAssertFalse(planning.meetingPlan.isConfigured)
+        XCTAssertNil(planning.meetingPlan.meetingAt)
+        XCTAssertNil(planning.meetingPlan.photoData)
         XCTAssertTrue(planning.preparationItems.isEmpty)
         XCTAssertTrue(planning.timelineEntries.isEmpty)
     }

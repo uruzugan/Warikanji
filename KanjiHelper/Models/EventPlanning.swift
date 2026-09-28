@@ -211,6 +211,7 @@ struct EventPlanningState: Codable, Equatable {
     var venuePlanning: EventVenuePlanning
     var budgetPlan: EventBudgetPlan
     var firstDrinkPlan: EventFirstDrinkPlan
+    var meetingPlan: EventMeetingPlan
     var parts: [EventPart]
     var participantResponses: [ParticipantResponse]
     var tasks: [EventTask]
@@ -227,6 +228,7 @@ struct EventPlanningState: Codable, Equatable {
         venuePlanning: EventVenuePlanning = EventVenuePlanning(),
         budgetPlan: EventBudgetPlan = EventBudgetPlan(),
         firstDrinkPlan: EventFirstDrinkPlan = EventFirstDrinkPlan(),
+        meetingPlan: EventMeetingPlan = EventMeetingPlan(),
         parts: [EventPart] = [],
         participantResponses: [ParticipantResponse] = [],
         tasks: [EventTask] = [],
@@ -242,6 +244,7 @@ struct EventPlanningState: Codable, Equatable {
         self.venuePlanning = venuePlanning
         self.budgetPlan = budgetPlan
         self.firstDrinkPlan = firstDrinkPlan
+        self.meetingPlan = meetingPlan
         self.parts = parts
         self.participantResponses = participantResponses
         self.tasks = tasks
@@ -253,7 +256,7 @@ struct EventPlanningState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case formatVersion, features, access, schedulePoll, venuePlanning, budgetPlan
-        case firstDrinkPlan
+        case firstDrinkPlan, meetingPlan
         case parts, participantResponses
         case tasks, preparationItems, timelineEntries
         case activity, dismissedAssistantActionKeys
@@ -286,6 +289,10 @@ struct EventPlanningState: Codable, Equatable {
             EventFirstDrinkPlan.self,
             forKey: .firstDrinkPlan
         ) ?? EventFirstDrinkPlan()
+        meetingPlan = try container.decodeIfPresent(
+            EventMeetingPlan.self,
+            forKey: .meetingPlan
+        ) ?? EventMeetingPlan()
         parts = try container.decodeIfPresent([EventPart].self, forKey: .parts) ?? []
         participantResponses = try container.decodeIfPresent(
             [ParticipantResponse].self,
@@ -421,6 +428,7 @@ struct EventPlanningState: Codable, Equatable {
             venuePlanning: venuePlanning.duplicated(),
             budgetPlan: budgetPlan.duplicated(using: participantMap),
             firstDrinkPlan: firstDrinkPlan.duplicated(),
+            meetingPlan: meetingPlan,
             parts: duplicatedParts,
             tasks: duplicatedTasks,
             preparationItems: duplicatedItems,
