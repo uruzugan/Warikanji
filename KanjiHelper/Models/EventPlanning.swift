@@ -220,7 +220,6 @@ struct EventPlanningState: Codable, Equatable {
     var preparationItems: [EventPreparationItem]
     var timelineEntries: [EventTimelineEntry]
     var activity: [EventActivityRecord]
-    var dismissedAssistantActionKeys: Set<String>
 
     init(
         formatVersion: Int = 1,
@@ -238,8 +237,7 @@ struct EventPlanningState: Codable, Equatable {
         tasks: [EventTask] = [],
         preparationItems: [EventPreparationItem] = [],
         timelineEntries: [EventTimelineEntry] = [],
-        activity: [EventActivityRecord] = [],
-        dismissedAssistantActionKeys: Set<String> = []
+        activity: [EventActivityRecord] = []
     ) {
         self.formatVersion = formatVersion
         self.features = features
@@ -257,7 +255,6 @@ struct EventPlanningState: Codable, Equatable {
         self.preparationItems = preparationItems
         self.timelineEntries = timelineEntries
         self.activity = activity
-        self.dismissedAssistantActionKeys = dismissedAssistantActionKeys
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -265,7 +262,7 @@ struct EventPlanningState: Codable, Equatable {
         case firstDrinkPlan, meetingPlan, seatingPlan, receptionPlan
         case parts, participantResponses
         case tasks, preparationItems, timelineEntries
-        case activity, dismissedAssistantActionKeys
+        case activity
     }
 
     init(from decoder: Decoder) throws {
@@ -324,10 +321,6 @@ struct EventPlanningState: Codable, Equatable {
         activity = try container.decodeIfPresent(
             [EventActivityRecord].self,
             forKey: .activity
-        ) ?? []
-        dismissedAssistantActionKeys = try container.decodeIfPresent(
-            Set<String>.self,
-            forKey: .dismissedAssistantActionKeys
         ) ?? []
     }
 

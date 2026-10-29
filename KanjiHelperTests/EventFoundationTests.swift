@@ -538,169 +538,6 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(copy.seatingPlan.tables[0].assignments.isEmpty)
     }
 
-    func testAssistantWarnsWhenBudgetAndAdvanceAreExceeded() {
-        let organizer = EventParticipant(name: "Organizer")
-        var event = Event(
-            title: "Dinner",
-            eventType: .meal,
-            participants: [organizer],
-            expenses: [
-                Expense(
-                    title: "Food",
-                    amount: 12_000,
-                    payerId: organizer.id
-                )
-            ]
-        )
-        event.planning.budgetPlan = EventBudgetPlan(
-            totalLimitMinorUnits: 10_000,
-            organizerParticipantId: organizer.id,
-            organizerAdvanceLimitMinorUnits: 8_000
-        )
-
-        let actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-
-        XCTAssertTrue(actions.contains { $0.id == "budget.totalExceeded" })
-        XCTAssertTrue(actions.contains { $0.id == "budget.advanceExceeded" })
-    }
-
-    func testAssistantFindsUnassignedItemsAndMissingTimeline() {
-        var event = Event(
-            title: "Party",
-            eventType: .party,
-            participants: [EventParticipant(name: "A")]
-        )
-        event.planning.preparationItems = [
-            EventPreparationItem(title: "Cake")
-        ]
-
-        let actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-
-        XCTAssertTrue(actions.contains { $0.id == "items.unassigned" })
-        XCTAssertTrue(actions.contains { $0.id == "timeline.empty" })
-    }
-
-    func testAssistantFindsMissingFirstDrinkMenuAndResponses() {
-        let participants = [
-            EventParticipant(name: "A"),
-            EventParticipant(name: "B")
-        ]
-        var event = Event(
-            title: "Party",
-            eventType: .drinkingParty,
-            participants: participants
-        )
-
-        var actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-        XCTAssertTrue(actions.contains { $0.id == "firstDrink.options.missing" })
-
-        let beer = DrinkOption(name: "Beer")
-        let tea = DrinkOption(name: "Tea", isToastOption: false)
-        event.planning.firstDrinkPlan = EventFirstDrinkPlan(
-            options: [beer, tea],
-            selections: [
-                FirstDrinkSelection(
-                    participantId: participants[0].id,
-                    firstChoiceId: beer.id,
-                    secondChoiceId: tea.id
-                )
-            ],
-            responseDeadline: Date(timeIntervalSince1970: 1_000)
-        )
-
-        actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english,
-            now: Date(timeIntervalSince1970: 2_000)
-        )
-
-        XCTAssertFalse(actions.contains { $0.id == "firstDrink.options.missing" })
-        let responseAction = actions.first {
-            $0.id == "firstDrink.responses.missing"
-        }
-        XCTAssertEqual(responseAction?.priority, .critical)
-    }
-
-    func testAssistantRequestsMeetingPointUntilConfigured() {
-        var event = Event(
-            title: "Party",
-            eventType: .party,
-            participants: [EventParticipant(name: "A")]
-        )
-
-        var actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-        XCTAssertTrue(actions.contains { $0.id == "meeting.point.missing" })
-
-        event.planning.meetingPlan = EventMeetingPlan(name: "North Gate")
-        actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-
-        XCTAssertFalse(actions.contains { $0.id == "meeting.point.missing" })
-    }
-
-    func testAssistantTracksSeatingCapacityAndAssignments() {
-        let participants = [
-            EventParticipant(name: "A"),
-            EventParticipant(name: "B")
-        ]
-        var event = Event(
-            title: "Party",
-            eventType: .party,
-            participants: participants
-        )
-
-        var actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-        XCTAssertTrue(actions.contains { $0.id == "seating.tables.empty" })
-
-        event.planning.seatingPlan = EventSeatingPlan(
-            tables: [SeatingTable(name: "A", seatCount: 1)]
-        )
-        actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-        XCTAssertTrue(actions.contains { $0.id == "seating.seats.insufficient" })
-
-        event.planning.seatingPlan = EventSeatingPlan(
-            tables: [
-                SeatingTable(
-                    name: "A",
-                    seatCount: 2,
-                    assignments: [
-                        SeatingAssignment(
-                            seatNumber: 1,
-                            participantId: participants[0].id
-                        )
-                    ]
-                )
-            ]
-        )
-        actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english
-        )
-        XCTAssertTrue(
-            actions.contains { $0.id == "seating.participants.unassigned" }
-        )
-    }
-
     func testDuplicateCoordinationResetsVotesAndReservation() {
         let optionId = UUID()
         let candidateId = UUID()
@@ -743,55 +580,6 @@ final class EventFoundationTests: XCTestCase {
         XCTAssertTrue(copy.venuePlanning.candidates[0].votes.isEmpty)
         XCTAssertNil(copy.venuePlanning.selectedCandidateId)
         XCTAssertNil(copy.venuePlanning.reservation)
-    }
-
-    func testAssistantPrioritizesOverdueTaskAndUnpaidTransfer() {
-        let participants = [
-            EventParticipant(name: "A"),
-            EventParticipant(name: "B")
-        ]
-        var event = Event(
-            title: "Dinner",
-            date: Date(timeIntervalSince1970: 1_000),
-            endDate: Date(timeIntervalSince1970: 2_000),
-            participants: participants,
-            expenses: [
-                Expense(
-                    title: "Food",
-                    amount: 1_000,
-                    payerId: participants[0].id
-                )
-            ],
-            transfers: [
-                Transfer(
-                    fromParticipantId: participants[1].id,
-                    toParticipantId: participants[0].id,
-                    amount: 500
-                )
-            ]
-        )
-        event.planning.participantResponses = participants.map {
-            ParticipantResponse(
-                participantId: $0.id,
-                attendance: .attending
-            )
-        }
-        event.planning.tasks = [
-            EventTask(
-                title: "Confirm booking",
-                dueAt: Date(timeIntervalSince1970: 3_000)
-            )
-        ]
-
-        let actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english,
-            now: Date(timeIntervalSince1970: 4_000)
-        )
-
-        XCTAssertEqual(actions.first?.id, "tasks.overdue")
-        XCTAssertTrue(actions.contains { $0.id == "payments.unpaid" })
-        XCTAssertFalse(actions.contains { $0.id == "attendance.unanswered" })
     }
 
     func testDuplicatePlanningDropsResponsesAccessAndHistory() {
@@ -933,39 +721,54 @@ final class EventFoundationTests: XCTestCase {
         )
     }
 
-    func testAssistantPreparesReceptionAndWarnsAboutPendingGuests() {
-        let now = Date(timeIntervalSince1970: 10_000)
-        let participants = [
-            EventParticipant(name: "A"),
-            EventParticipant(name: "B")
-        ]
-        var event = Event(
-            title: "Party",
-            date: now,
-            endDate: now.addingTimeInterval(3_600),
-            eventType: .party,
-            participants: participants
-        )
-        event.planning.features.enabled.insert(.reception)
-
-        var actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english,
-            now: now
-        )
-        XCTAssertTrue(actions.contains { $0.id == "reception.prepare" })
-
-        event.planning.receptionPlan.synchronize(
-            with: participants.map(\.id)
-        )
-        event.planning.receptionPlan.entries[0].checkedInAt = now
-        actions = EventProgressAssistant.actions(
-            for: event,
-            language: .english,
-            now: now
-        )
-
-        XCTAssertFalse(actions.contains { $0.id == "reception.prepare" })
-        XCTAssertTrue(actions.contains { $0.id == "reception.pending" })
+    func testCustomEventTypeAppearsAfterOther() {
+        XCTAssertEqual(Array(EventType.allCases.suffix(2)), [.other, .custom])
     }
+
+    func testCustomEventTypeRoundTripKeepsTemplateAndEventSnapshot() throws {
+        let definition = CustomEventTypeDefinition(
+            name: "Movie Night",
+            symbolName: "film.fill",
+            features: EventFeatureConfiguration(
+                enabled: [.attendance, .expenseTracking, .games]
+            )
+        )
+        let profile = LocalProfile(
+            name: "Owner",
+            customEventTypes: [definition]
+        )
+        let event = Event(
+            title: "Friday",
+            eventType: .custom,
+            customEventType: definition.snapshot,
+            planning: EventPlanningState(features: definition.features)
+        )
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+
+        let restoredProfile = try decoder.decode(
+            LocalProfile.self,
+            from: encoder.encode(profile)
+        )
+        let restoredEvent = try decoder.decode(
+            Event.self,
+            from: encoder.encode(event)
+        )
+
+        XCTAssertEqual(restoredProfile.customEventTypes, [definition])
+        XCTAssertEqual(restoredEvent.customEventType, definition.snapshot)
+        XCTAssertEqual(restoredEvent.eventTypeDisplayName(for: .english), "Movie Night")
+        XCTAssertEqual(restoredEvent.eventTypeSymbolName, "film.fill")
+        XCTAssertEqual(restoredEvent.planning.features, definition.features)
+    }
+
+    func testCustomEventTypeRejectsUnsupportedSymbol() {
+        let definition = CustomEventTypeDefinition(
+            name: "Safe",
+            symbolName: "not.a.real.symbol"
+        )
+
+        XCTAssertEqual(definition.symbolName, "star.fill")
+    }
+
 }

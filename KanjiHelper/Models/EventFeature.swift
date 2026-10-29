@@ -241,7 +241,7 @@ extension EventType {
             enabled = core.union(coordination).union([
                 .weatherAndFallback, .vehicles, .clubActivities, .budget
             ])
-        case .other:
+        case .other, .custom:
             enabled = core.union([.tasksAndItems, .timeline, .postEventSummary])
         }
 

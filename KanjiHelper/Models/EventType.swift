@@ -18,6 +18,7 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
     case family = "家族イベント"
     case clubSports = "サークル・部活"
     case other = "その他"
+    case custom = "カスタム"
 
     var id: String { rawValue }
 
@@ -40,6 +41,7 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
         case .family: return "figure.2.and.child.holdinghands"
         case .clubSports: return "sportscourt.fill"
         case .other: return "calendar"
+        case .custom: return "slider.horizontal.3"
         }
     }
 
@@ -187,6 +189,13 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
                 es: "Otro",
                 pt: "Outro"
             )
+
+        case .custom:
+            return language.text(
+                ja: "カスタム", en: "Custom",
+                zhHans: "自定义", zhHant: "自訂",
+                ko: "사용자 설정", es: "Personalizado", pt: "Personalizado"
+            )
         }
     }
 
@@ -240,7 +249,7 @@ enum EventType: String, Codable, CaseIterable, Identifiable {
 
         case .bbq, .camp, .party, .liveEvent, .reunion, .studySession,
              .gameNight, .birthday, .farewell, .weddingAfterParty,
-             .family, .clubSports, .other:
+             .family, .clubSports, .other, .custom:
             return language.text(
                 ja: "イベントの内容に合わせて、負担比率を自由に調整できます。",
                 en: "Adjust each person's share to match the event.",

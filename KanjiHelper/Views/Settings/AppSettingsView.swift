@@ -35,6 +35,7 @@ struct AppSettingsView: View {
                     brandCard
                     accountCard
                     generalCard
+                    customEventTypesCard
                     backupCard
                     helpCard
                     switchAccountCard
@@ -306,6 +307,58 @@ struct AppSettingsView: View {
             .buttonStyle(.plain)
         }
         .appCard()
+    }
+
+    private var customEventTypesCard: some View {
+        NavigationLink {
+            CustomEventTypesView()
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(AppTheme.primary.gradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(
+                        t(
+                            "カスタムイベント種類", "Custom Event Types",
+                            "自定义活动类型", "自訂活動類型", "사용자 설정 이벤트 유형",
+                            "Tipos de evento personalizados", "Tipos de evento personalizados"
+                        )
+                    )
+                    .font(.headline)
+
+                    Text(
+                        t(
+                            "名前・アイコン・機能を保存して再利用",
+                            "Save a name, icon, and features for reuse",
+                            "保存名称、图标和功能以便重复使用",
+                            "儲存名稱、圖示與功能以便重複使用",
+                            "이름, 아이콘과 기능을 저장해 재사용",
+                            "Guarda nombre, icono y funciones",
+                            "Salve nome, ícone e recursos"
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text("\(profileStore.activeCustomEventTypes.count)")
+                    .font(.subheadline.bold().monospacedDigit())
+                    .foregroundStyle(AppTheme.primary)
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.tertiary)
+            }
+            .appCard()
+        }
+        .buttonStyle(.plain)
     }
 
     private var backupCard: some View {

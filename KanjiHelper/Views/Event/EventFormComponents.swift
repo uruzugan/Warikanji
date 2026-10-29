@@ -3,6 +3,7 @@ import SwiftUI
 struct EventCreateHero: View {
     let title: String
     let eventType: EventType
+    let customEventType: CustomEventTypeDefinition?
     let date: Date
     let participantCount: Int
     let language: AppLanguage
@@ -16,10 +17,18 @@ struct EventCreateHero: View {
         date.formatted(Date.FormatStyle().month(.defaultDigits).day(.defaultDigits).locale(Locale(identifier: language.localeIdentifier)))
     }
 
+    private var typeName: String {
+        customEventType?.name ?? eventType.displayName(for: language)
+    }
+
+    private var typeSymbol: String {
+        customEventType?.symbolName ?? eventType.symbolName
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 14) {
-                Image(systemName: eventType.symbolName)
+                Image(systemName: typeSymbol)
                     .font(.system(size: 25, weight: .semibold))
                     .frame(width: 58, height: 58)
                     .background(.white.opacity(0.18))
@@ -34,7 +43,7 @@ struct EventCreateHero: View {
             }
 
             HStack(spacing: 0) {
-                stat(eventType.displayName(for: language), language.eventText(.type), eventType.symbolName)
+                stat(typeName, language.eventText(.type), typeSymbol)
                 divider
                 stat("\(participantCount) \(language.participantUnit(for: participantCount))", language.eventText(.participants), "person.2.fill")
                 divider
@@ -98,6 +107,8 @@ struct EventBasicInfoCard: View {
 
 struct EventTypePickerCard: View {
     @Binding var eventType: EventType
+    @Binding var customEventTypeId: UUID?
+    let customEventTypes: [CustomEventTypeDefinition]
     let language: AppLanguage
 
     private let columns = Array(repeating: GridItem(.flexible()), count: 3)
@@ -112,15 +123,66 @@ struct EventTypePickerCard: View {
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(EventType.allCases) { type in typeButton(type) }
             }
+
+            if eventType == .custom {
+                Divider()
+
+                if customEventTypes.isEmpty {
+                    Label(
+                        language.text(
+                            ja: "先にカスタム種類を作成してください。",
+                            en: "Create a custom type first.",
+                            zhHans: "请先创建自定义类型。", zhHant: "請先建立自訂類型。",
+                            ko: "먼저 사용자 설정 유형을 만드세요.",
+                            es: "Crea primero un tipo personalizado.",
+                            pt: "Crie primeiro um tipo personalizado."
+                        ),
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                } else {
+                    ForEach(customEventTypes) { definition in
+                        customTypeButton(definition)
+                    }
+                }
+
+                NavigationLink {
+                    CustomEventTypesView()
+                } label: {
+                    Label(
+                        language.text(
+                            ja: "カスタム種類を管理", en: "Manage Custom Types",
+                            zhHans: "管理自定义类型", zhHant: "管理自訂類型",
+                            ko: "사용자 설정 유형 관리", es: "Gestionar tipos personalizados",
+                            pt: "Gerenciar tipos personalizados"
+                        ),
+                        systemImage: "slider.horizontal.3"
+                    )
+                    .font(.subheadline.bold())
+                }
+            }
         }
         .appCard()
+        .onChange(of: customEventTypes) {
+            guard eventType == .custom,
+                  !customEventTypes.contains(where: { $0.id == customEventTypeId }) else {
+                return
+            }
+            customEventTypeId = customEventTypes.first?.id
+        }
     }
 
     private func typeButton(_ type: EventType) -> some View {
         let selected = eventType == type
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { eventType = type }
+            withAnimation(.easeInOut(duration: 0.15)) {
+                eventType = type
+                customEventTypeId = type == .custom
+                    ? customEventTypes.first?.id
+                    : nil
+            }
         } label: {
             VStack(spacing: 6) {
                 Image(systemName: type.symbolName)
@@ -143,6 +205,36 @@ struct EventTypePickerCard: View {
                 RoundedRectangle(cornerRadius: 15).stroke(selected ? AppTheme.primary : Color.clear, lineWidth: 1.5)
             }
             .clipShape(RoundedRectangle(cornerRadius: 15))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func customTypeButton(
+        _ definition: CustomEventTypeDefinition
+    ) -> some View {
+        let selected = customEventTypeId == definition.id
+
+        return Button {
+            customEventTypeId = definition.id
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: definition.symbolName)
+                    .foregroundStyle(selected ? .white : AppTheme.primary)
+                    .frame(width: 38, height: 38)
+                    .background(selected ? AppTheme.primary : AppTheme.primary.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+
+                Text(definition.name)
+                    .font(.subheadline.bold())
+
+                Spacer()
+
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(AppTheme.primary)
+                }
+            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

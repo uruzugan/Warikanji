@@ -7,6 +7,7 @@ struct LocalProfile: Identifiable, Codable, Equatable {
     var language: AppLanguage
     var homeCurrency: AppCurrency
     var referenceCurrency: AppCurrency
+    var customEventTypes: [CustomEventTypeDefinition]
 
     init(
         id: UUID = UUID(),
@@ -14,7 +15,8 @@ struct LocalProfile: Identifiable, Codable, Equatable {
         createdAt: Date = Date(),
         language: AppLanguage = .deviceDefault,
         homeCurrency: AppCurrency? = nil,
-        referenceCurrency: AppCurrency? = nil
+        referenceCurrency: AppCurrency? = nil,
+        customEventTypes: [CustomEventTypeDefinition] = []
     ) {
         let defaultCurrency = homeCurrency
             ?? AppCurrency.deviceDefault(for: language)
@@ -26,6 +28,7 @@ struct LocalProfile: Identifiable, Codable, Equatable {
         self.homeCurrency = defaultCurrency
         self.referenceCurrency = referenceCurrency
             ?? defaultCurrency
+        self.customEventTypes = customEventTypes
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -35,6 +38,7 @@ struct LocalProfile: Identifiable, Codable, Equatable {
         case language
         case homeCurrency
         case referenceCurrency
+        case customEventTypes
     }
 
     init(from decoder: Decoder) throws {
@@ -75,6 +79,11 @@ struct LocalProfile: Identifiable, Codable, Equatable {
             AppCurrency.self,
             forKey: .referenceCurrency
         ) ?? homeCurrency
+
+        customEventTypes = try container.decodeIfPresent(
+            [CustomEventTypeDefinition].self,
+            forKey: .customEventTypes
+        ) ?? []
     }
 
     func encode(to encoder: Encoder) throws {
@@ -110,6 +119,11 @@ struct LocalProfile: Identifiable, Codable, Equatable {
         try container.encode(
             referenceCurrency,
             forKey: .referenceCurrency
+        )
+
+        try container.encode(
+            customEventTypes,
+            forKey: .customEventTypes
         )
     }
 }

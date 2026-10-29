@@ -124,6 +124,13 @@ final class BackupService {
         guard Set(profileIds).count == profileIds.count,
               archive.profiles.allSatisfy({
                   !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      && Set($0.customEventTypes.map(\.id)).count
+                          == $0.customEventTypes.count
+                      && $0.customEventTypes.allSatisfy {
+                          !$0.name.trimmingCharacters(
+                              in: .whitespacesAndNewlines
+                          ).isEmpty
+                      }
               }),
               archive.profileEvents.count == archive.profiles.count,
               Set(archive.profileEvents.map(\.profileId)) == Set(profileIds) else {

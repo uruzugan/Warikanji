@@ -31,7 +31,10 @@ struct HomeView: View {
             guard !query.isEmpty else { return typeMatches }
 
             return typeMatches &&
-                [event.displayTitle(for: language), event.location, event.memo, event.eventType.displayName(for: language)]
+                [
+                    event.displayTitle(for: language), event.location, event.memo,
+                    event.eventTypeDisplayName(for: language)
+                ]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
 
@@ -506,7 +509,7 @@ private struct EventHomeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: event.eventType.symbolName)
+                Image(systemName: event.eventTypeSymbolName)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(AppTheme.primary)
                     .frame(width: 48, height: 48)

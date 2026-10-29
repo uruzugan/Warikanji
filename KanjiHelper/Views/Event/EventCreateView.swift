@@ -7,6 +7,7 @@ struct EventCreateView: View {
 
     @State private var title = ""
     @State private var eventType: EventType = .drinkingParty
+    @State private var customEventTypeId: UUID?
     @State private var date = Date()
     @State private var endDate = Date().addingTimeInterval(60 * 60 * 2)
     @State private var location = ""
@@ -16,6 +17,11 @@ struct EventCreateView: View {
     @State private var hasLoadedDefaults = false
 
     private var language: AppLanguage { profileStore.activeLanguage }
+    private var selectedCustomEventType: CustomEventTypeDefinition? {
+        profileStore.activeCustomEventTypes.first {
+            $0.id == customEventTypeId
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -24,6 +30,9 @@ struct EventCreateView: View {
                     EventCreateHero(
                         title: title,
                         eventType: eventType,
+                        customEventType: eventType == .custom
+                            ? selectedCustomEventType
+                            : nil,
                         date: date,
                         participantCount: participantCount,
                         language: language
@@ -37,7 +46,12 @@ struct EventCreateView: View {
                         language: language
                     )
 
-                    EventTypePickerCard(eventType: $eventType, language: language)
+                    EventTypePickerCard(
+                        eventType: $eventType,
+                        customEventTypeId: $customEventTypeId,
+                        customEventTypes: profileStore.activeCustomEventTypes,
+                        language: language
+                    )
                     EventCurrencyCard(currency: $currency, language: language)
                     EventParticipantCountCard(participantCount: $participantCount, language: language)
                     EventMemoCard(memo: $memo, language: language)
@@ -74,6 +88,8 @@ struct EventCreateView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 17))
         }
         .buttonStyle(.plain)
+        .disabled(eventType == .custom && selectedCustomEventType == nil)
+        .opacity(eventType == .custom && selectedCustomEventType == nil ? 0.45 : 1)
     }
 
     private func loadDefaultsIfNeeded() {
@@ -83,6 +99,11 @@ struct EventCreateView: View {
     }
 
     private func save() {
+        guard eventType != .custom || selectedCustomEventType != nil else { return }
+
+        let planning = selectedCustomEventType.map {
+            EventPlanningState(features: $0.features)
+        }
         let event = Event(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             date: date,
@@ -90,8 +111,10 @@ struct EventCreateView: View {
             location: location.trimmingCharacters(in: .whitespacesAndNewlines),
             memo: memo.trimmingCharacters(in: .whitespacesAndNewlines),
             eventType: eventType,
+            customEventType: selectedCustomEventType?.snapshot,
             currency: currency,
-            expectedParticipantCount: participantCount
+            expectedParticipantCount: participantCount,
+            planning: planning
         )
 
         if viewModel.addEvent(event) {

@@ -50,6 +50,7 @@ extension EventViewModel {
             location: source.location,
             memo: source.memo,
             eventType: source.eventType,
+            customEventType: source.customEventType,
             currency: source.currency,
             expectedParticipantCount: source.expectedParticipantCount,
             participants: participants,

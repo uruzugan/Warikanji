@@ -9,7 +9,7 @@ struct EventDetailHero: View {
 
     var body: some View {
         HStack(spacing: 15) {
-            Image(systemName: event.eventType.symbolName)
+            Image(systemName: event.eventTypeSymbolName)
                 .font(.system(size: 26, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 58, height: 58)
@@ -17,7 +17,7 @@ struct EventDetailHero: View {
                 .clipShape(RoundedRectangle(cornerRadius: 18))
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(event.eventType.displayName(for: language))
+                Text(event.eventTypeDisplayName(for: language))
                     .font(.caption.bold())
                     .foregroundStyle(.white.opacity(0.8))
 

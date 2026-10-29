@@ -83,8 +83,8 @@ struct EventShareCardView: View {
     private var eventHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 7) {
-                Image(systemName: event.eventType.symbolName)
-                Text(event.eventType.displayName(for: language))
+                Image(systemName: event.eventTypeSymbolName)
+                Text(event.eventTypeDisplayName(for: language))
             }
             .font(.system(size: 11, weight: .bold))
             .foregroundStyle(.white.opacity(0.8))

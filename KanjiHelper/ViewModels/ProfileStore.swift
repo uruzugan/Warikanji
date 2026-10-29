@@ -38,6 +38,10 @@ final class ProfileStore: ObservableObject {
         activeProfile?.referenceCurrency ?? activeHomeCurrency
     }
 
+    var activeCustomEventTypes: [CustomEventTypeDefinition] {
+        activeProfile?.customEventTypes ?? []
+    }
+
     var appName: String {
         activeLanguage.appName
     }
@@ -129,6 +133,41 @@ final class ProfileStore: ObservableObject {
 
         UserDefaults.standard.set(trimmedName, forKey: "userName")
         return true
+    }
+
+    @discardableResult
+    func saveCustomEventType(_ definition: CustomEventTypeDefinition) -> Bool {
+        let name = definition.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return false }
+
+        return updateActiveProfile { profile in
+            var saved = definition
+            saved.name = name
+            saved.symbolName = CustomEventTypeDefinition.allowedSymbolNames.contains(
+                saved.symbolName
+            ) ? saved.symbolName : "star.fill"
+            saved.updatedAt = Date()
+
+            if let index = profile.customEventTypes.firstIndex(where: {
+                $0.id == saved.id
+            }) {
+                saved.createdAt = profile.customEventTypes[index].createdAt
+                profile.customEventTypes[index] = saved
+            } else {
+                profile.customEventTypes.append(saved)
+            }
+
+            profile.customEventTypes.sort {
+                $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
+        }
+    }
+
+    @discardableResult
+    func deleteCustomEventType(id: UUID) -> Bool {
+        updateActiveProfile { profile in
+            profile.customEventTypes.removeAll { $0.id == id }
+        }
     }
 
     @discardableResult

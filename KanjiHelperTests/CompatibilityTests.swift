@@ -26,6 +26,7 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertEqual(event.expectedParticipantCount, 1)
         XCTAssertTrue(event.location.isEmpty)
         XCTAssertTrue(event.memo.isEmpty)
+        XCTAssertNil(event.customEventType)
         XCTAssertEqual(event.planning.formatVersion, 1)
         XCTAssertTrue(event.planning.features.contains(.expenseTracking))
         XCTAssertTrue(event.planning.features.contains(.settlement))
@@ -68,6 +69,7 @@ final class CompatibilityTests: XCTestCase {
         XCTAssertEqual(profile.id, id)
         XCTAssertEqual(profile.homeCurrency, .jpy)
         XCTAssertEqual(profile.referenceCurrency, .jpy)
+        XCTAssertTrue(profile.customEventTypes.isEmpty)
     }
 
     func testPlanningSavedBeforeCoordinationGetsEmptyDefaults() throws {

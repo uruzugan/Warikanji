@@ -48,7 +48,6 @@ struct EventDetailView: View {
 
                 EventDetailHero(event: event)
                 EventDetailSummary(event: event)
-                EventProgressAssistantCard(event: event, language: language)
 
                 EventDetailInfo(event: event) {
                     guard !isLocked else { return }

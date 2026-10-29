@@ -8,6 +8,7 @@ struct Event: Identifiable, Codable, Equatable {
     var location: String
     var memo: String
     var eventType: EventType
+    var customEventType: EventCustomTypeSnapshot?
     var currency: AppCurrency
     var expectedParticipantCount: Int
     var participants: [EventParticipant]
@@ -23,6 +24,7 @@ struct Event: Identifiable, Codable, Equatable {
         location: String = "",
         memo: String = "",
         eventType: EventType = .other,
+        customEventType: EventCustomTypeSnapshot? = nil,
         currency: AppCurrency = .jpy,
         expectedParticipantCount: Int = 1,
         participants: [EventParticipant] = [],
@@ -37,6 +39,7 @@ struct Event: Identifiable, Codable, Equatable {
         self.location = location
         self.memo = memo
         self.eventType = eventType
+        self.customEventType = eventType == .custom ? customEventType : nil
         self.currency = currency
         self.expectedParticipantCount = max(1, expectedParticipantCount)
         self.participants = participants
@@ -47,7 +50,7 @@ struct Event: Identifiable, Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, date, endDate, location, memo, eventType, currency
+        case id, title, date, endDate, location, memo, eventType, customEventType, currency
         case expectedParticipantCount, participants, expenses, transfers, planning
     }
 
@@ -64,6 +67,11 @@ struct Event: Identifiable, Codable, Equatable {
         location = try container.decodeIfPresent(String.self, forKey: .location) ?? ""
         memo = try container.decodeIfPresent(String.self, forKey: .memo) ?? ""
         eventType = try container.decodeIfPresent(EventType.self, forKey: .eventType) ?? .other
+        customEventType = try container.decodeIfPresent(
+            EventCustomTypeSnapshot.self,
+            forKey: .customEventType
+        )
+        if eventType != .custom { customEventType = nil }
         currency = try container.decodeIfPresent(AppCurrency.self, forKey: .currency) ?? .jpy
         participants = try container.decodeIfPresent([EventParticipant].self, forKey: .participants) ?? []
         expenses = try container.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
@@ -92,6 +100,25 @@ struct Event: Identifiable, Codable, Equatable {
     func displayTitle(for language: AppLanguage) -> String {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedTitle.isEmpty ? Self.untitledName(for: language) : trimmedTitle
+    }
+
+    func eventTypeDisplayName(for language: AppLanguage) -> String {
+        guard eventType == .custom,
+              let name = customEventType?.name.trimmingCharacters(
+                  in: .whitespacesAndNewlines
+              ), !name.isEmpty else {
+            return eventType.displayName(for: language)
+        }
+        return name
+    }
+
+    var eventTypeSymbolName: String {
+        guard eventType == .custom,
+              let symbolName = customEventType?.symbolName,
+              CustomEventTypeDefinition.allowedSymbolNames.contains(symbolName) else {
+            return eventType.symbolName
+        }
+        return symbolName
     }
 
     var calculationParticipantCount: Int {

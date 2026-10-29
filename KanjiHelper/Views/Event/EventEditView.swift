@@ -10,6 +10,7 @@ struct EventEditView: View {
 
     @State private var title = ""
     @State private var eventType: EventType = .other
+    @State private var customEventTypeId: UUID?
     @State private var date = Date()
     @State private var endDate = Date()
     @State private var location = ""
@@ -17,17 +18,38 @@ struct EventEditView: View {
     @State private var participantCount = 1
     @State private var enabledFeatures: Set<EventFeature> = []
     @State private var hasLoaded = false
+    @State private var loadedCustomEventTypeId: UUID?
     @State private var showDateRangeWarning = false
 
     private enum Field { case title, location, memo }
-    private let columns = Array(repeating: GridItem(.flexible()), count: 3)
-
     private var event: Event? { viewModel.event(for: eventId) }
     private var language: AppLanguage { profileStore.activeLanguage }
     private var registeredParticipantCount: Int { event?.registeredParticipantCount ?? 0 }
     private var minimumParticipantCount: Int { event?.minimumParticipantCount ?? 1 }
     private var unnamedCount: Int { max(participantCount - registeredParticipantCount, 0) }
-    private var isSaveDisabled: Bool { endDate < date }
+    private var isSaveDisabled: Bool {
+        endDate < date || (eventType == .custom && selectedCustomEventType == nil)
+    }
+    private var availableCustomEventTypes: [CustomEventTypeDefinition] {
+        var definitions = profileStore.activeCustomEventTypes
+        if let snapshot = event?.customEventType,
+           !definitions.contains(where: { $0.id == snapshot.id }) {
+            definitions.append(
+                CustomEventTypeDefinition(
+                    id: snapshot.id,
+                    name: snapshot.name,
+                    symbolName: snapshot.symbolName,
+                    features: EventFeatureConfiguration(enabled: enabledFeatures),
+                    createdAt: .distantPast,
+                    updatedAt: .distantPast
+                )
+            )
+        }
+        return definitions
+    }
+    private var selectedCustomEventType: CustomEventTypeDefinition? {
+        availableCustomEventTypes.first { $0.id == customEventTypeId }
+    }
 
     private var expensesOutsideSelectedPeriod: [Expense] {
         guard let event else { return [] }
@@ -60,7 +82,12 @@ struct EventEditView: View {
                     heroCard
                     eventInfoCard
                     if !expensesOutsideSelectedPeriod.isEmpty { dateRangeWarningCard }
-                    typeCard
+                    EventTypePickerCard(
+                        eventType: $eventType,
+                        customEventTypeId: $customEventTypeId,
+                        customEventTypes: availableCustomEventTypes,
+                        language: language
+                    )
                     EventFeatureSummaryCard(
                         enabledFeatures: $enabledFeatures,
                         eventType: eventType,
@@ -86,6 +113,16 @@ struct EventEditView: View {
                 }
             }
             .onAppear { loadIfNeeded() }
+            .onChange(of: customEventTypeId) { oldValue, newValue in
+                if newValue == loadedCustomEventTypeId {
+                    loadedCustomEventTypeId = nil
+                    return
+                }
+                guard hasLoaded, oldValue != newValue,
+                      eventType == .custom,
+                      let definition = selectedCustomEventType else { return }
+                enabledFeatures = definition.features.enabled
+            }
             .confirmationDialog(
                 t(
                     "期間外の費用があります",
@@ -136,7 +173,11 @@ struct EventEditView: View {
 
     private var heroCard: some View {
         HStack(spacing: 14) {
-            Image(systemName: eventType.symbolName)
+            Image(
+                systemName: eventType == .custom
+                    ? selectedCustomEventType?.symbolName ?? eventType.symbolName
+                    : eventType.symbolName
+            )
                 .font(.system(size: 25, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 56, height: 56)
@@ -284,47 +325,6 @@ struct EventEditView: View {
         }
     }
 
-    private var typeCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(language.eventText(.eventType), systemImage: "square.grid.2x2.fill")
-                .font(.headline)
-                .foregroundStyle(AppTheme.primary)
-
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(EventType.allCases) { type in
-                    Button {
-                        eventType = type
-                    } label: {
-                        VStack(spacing: 7) {
-                            Image(systemName: type.symbolName).font(.title2)
-
-                            Text(type.displayName(for: language))
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                        .foregroundStyle(eventType == type ? AppTheme.primary : Color.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 72)
-                        .background(
-                            eventType == type
-                            ? AppTheme.primary.opacity(0.12)
-                            : Color(uiColor: .tertiarySystemGroupedBackground)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(eventType == type ? AppTheme.primary : Color.clear, lineWidth: 1.5)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .appCard()
-    }
-
     private var participantCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 14) {
@@ -458,6 +458,8 @@ struct EventEditView: View {
 
         title = event.title
         eventType = event.eventType
+        loadedCustomEventTypeId = event.customEventType?.id
+        customEventTypeId = event.customEventType?.id
         date = event.date
         endDate = event.endDate
         location = event.location
@@ -479,9 +481,13 @@ struct EventEditView: View {
 
     private func save() {
         guard var updated = event else { return }
+        guard eventType != .custom || selectedCustomEventType != nil else { return }
 
         updated.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.eventType = eventType
+        updated.customEventType = eventType == .custom
+            ? selectedCustomEventType?.snapshot ?? updated.customEventType
+            : nil
         updated.date = date
         updated.endDate = max(endDate, date)
         updated.location = location.trimmingCharacters(in: .whitespacesAndNewlines)
